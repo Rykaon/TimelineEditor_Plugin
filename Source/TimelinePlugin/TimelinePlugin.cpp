@@ -1,8 +1,7 @@
-#include "Modules/ModuleManager.h"
-#include "PropertyEditorModule.h"
 #include "TimelinePlugin.h"
 #include "TimelinePluginComponent.h"
 #include "TimelinePluginWidget.h"
+#include "PropertyEditorModule.h"
 
 IMPLEMENT_MODULE(FTimelinePluginModule, MyEditorPlugin)
 
@@ -10,25 +9,21 @@ void FTimelinePluginModule::StartupModule()
 {
     UE_LOG(LogTemp, Log, TEXT("TimelinePlugin has started!"));
 
-    // Charger le module PropertyEditor
-    FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+    FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
-    // Enregistrer la personnalisation des Blueprints
-    PropertyModule.RegisterCustomClassLayout(
-        "TimelineComponent", // Nom du composant
+    // Lier la personnalisation de détails à la classe du composant
+    PropertyEditorModule.RegisterCustomClassLayout(
+        UTimelinePluginComponent::StaticClass()->GetFName(),
         FOnGetDetailCustomizationInstance::CreateStatic(&UTimelinePluginWidget::MakeInstance)
     );
-
-    PropertyModule.NotifyCustomizationModuleChanged();
 }
 
 void FTimelinePluginModule::ShutdownModule()
 {
+    // Unregister la personnalisation à la fermeture
     if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
     {
-        FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-
-        // Désenregistrer la personnalisation
-        PropertyModule.UnregisterCustomClassLayout("TimelineComponent");
+        FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+        PropertyEditorModule.UnregisterCustomClassLayout(UTimelinePluginComponent::StaticClass()->GetFName());
     }
 }

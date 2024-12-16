@@ -11,7 +11,16 @@ UTimelinePluginComponent::UTimelinePluginComponent()
 
     // Get OwnerActor Reference
 	OwnerActor = GetOwner();
-    OwnerActorClass = OwnerActor->GetClass();
+
+    if (OwnerActor != nullptr)  // Vérifie si l'acteur est valide avant d'accéder à ses propriétés
+    {
+        OwnerActorClass = OwnerActor->GetClass();
+    }
+    else
+    {
+        // Log ou gestion d'erreur si OwnerActor est nul
+        UE_LOG(LogTemp, Warning, TEXT("OwnerActor is null in UTimelinePluginComponent constructor"));
+    }
 
     // Set Available Types
 	TArray<FString> TypesToAdd = { "Boolean", "Integer", "Float", "Vector", "Rotator" };
@@ -189,16 +198,18 @@ void UTimelinePluginComponent::OnVariableSelected(TSharedPtr<FString> NewSelecti
             bool BoolValue = BoolProperty->GetPropertyValue_InContainer(OwnerActor);
             TrackedBools.Add(*NewSelection, BoolValue);
         }
-        else if (FStructProperty* StructProperty = CastField<FStructProperty>(Property))
+        else if (FStructProperty* StructProperty = (FStructProperty*)OwnerActorClass->FindPropertyByName(FName(*NewSelection)))
         {
             UScriptStruct* PropertyStruct = StructProperty->Struct;
 
-            if (PropertyStruct->IsA<FVector>())
+            // Vérification si c'est un FVector
+            if (StructProperty->Struct == TBaseStructure<FVector>::Get())
             {
                 FVector* VectorValue = StructProperty->ContainerPtrToValuePtr<FVector>(OwnerActor);
                 TrackedVectors.Add(*NewSelection, *VectorValue);
             }
-            else if (PropertyStruct->IsA<FRotator>())
+            // Vérification si c'est un FRotator
+            else if (PropertyStruct->GetName() == "Rotator")
             {
                 FRotator* RotatorValue = StructProperty->ContainerPtrToValuePtr<FRotator>(OwnerActor);
                 TrackedRotators.Add(*NewSelection, *RotatorValue);

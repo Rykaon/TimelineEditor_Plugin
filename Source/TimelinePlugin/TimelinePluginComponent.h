@@ -5,7 +5,7 @@
 #include "TimelinePluginComponent.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), DisplayName = "Timeline" )
 class TIMELINEPLUGIN_API UTimelinePluginComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -14,13 +14,74 @@ public:
 	// Sets default values for this component's properties
 	UTimelinePluginComponent();
 
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	bool IsVariableTracked(const FString& VariableName);
+	void PopulateAvailableVariables();
+	void GetVariablesFromParentBlueprint();
+	void OnTypeSelected(TSharedPtr<FString> NewSelection);
+	void OnVariableSelected(TSharedPtr<FString> NewSelection);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	// OwnerActor References
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	AActor* OwnerActor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	UClass* OwnerActorClass;
+
+	// Durée totale de l'animation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	float AnimationDuration;
+
+
+
+	// Available TrackedTypes
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
+	TArray<FString> AvailableTypes;
+
+	// Current TrackedType
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
+	FString SelectedType;
+
+
+	// Available Variables Of Current TrackedTypes
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
+	TArray<FString> AvailableVariables;
+
+	// Available Variables Of Available TrackedTypes
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TArray<FString> AvailableBools;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TArray<FString> AvailableInts;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TArray<FString> AvailableFloats;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TArray<FString> AvailableVectors;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TArray<FString> AvailableRotators;
+
+
+
+	// Variables already Tracked
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
+	TArray<FString> TrackedVariables;
+
+	// TrackedVariables Of Available TrackedType
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TMap<FString, bool> TrackedBools;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TMap<FString, int> TrackedInts;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	TMap<FString, float> TrackedFloats;
@@ -28,7 +89,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	TMap<FString, FVector> TrackedVectors;
 
-	// Durée totale de l'animation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
-	float AnimationDuration;
+	TMap<FString, FRotator> TrackedRotators;
 };

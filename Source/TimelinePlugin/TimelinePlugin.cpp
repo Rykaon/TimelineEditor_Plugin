@@ -15,7 +15,7 @@ void FTimelinePluginModule::StartupModule()
 
     // Enregistrer la personnalisation des Blueprints
     PropertyModule.RegisterCustomClassLayout(
-        "Actor", // Tous les Blueprints Actor
+        "TimelineComponent", // Nom du composant
         FOnGetDetailCustomizationInstance::CreateStatic(&UTimelinePluginWidget::MakeInstance)
     );
 
@@ -29,6 +29,6 @@ void FTimelinePluginModule::ShutdownModule()
         FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
         // Désenregistrer la personnalisation
-        PropertyModule.UnregisterCustomClassLayout("Actor");
+        PropertyModule.UnregisterCustomClassLayout("TimelineComponent");
     }
 }

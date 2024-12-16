@@ -9,28 +9,39 @@ UTimelinePluginComponent::UTimelinePluginComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-    // Get OwnerActor Reference
-	OwnerActor = GetOwner();
-
-    if (OwnerActor != nullptr)  // Vérifie si l'acteur est valide avant d'accéder à ses propriétés
-    {
-        OwnerActorClass = OwnerActor->GetClass();
-    }
-    else
-    {
-        // Log ou gestion d'erreur si OwnerActor est nul
-        UE_LOG(LogTemp, Warning, TEXT("OwnerActor is null in UTimelinePluginComponent constructor"));
-    }
-
-    // Set Available Types
-	TArray<FString> TypesToAdd = { "Boolean", "Integer", "Float", "Vector", "Rotator" };
-	AvailableTypes.Append(TypesToAdd);
-
-    // Set Available Variables of Available Types
-    GetVariablesFromParentBlueprint();
-
     // Set Default Animation Duration
-	AnimationDuration = 5.0f;
+    AnimationDuration = 5.0f;
+}
+
+void UTimelinePluginComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+    Super::PostEditChangeProperty(PropertyChangedEvent);
+
+    if (!IsInitialized)
+    {
+        // Get OwnerActor Reference
+        OwnerActor = GetOwner();
+
+        if (OwnerActor != nullptr)  // Vérifie si l'acteur est valide avant d'accéder à ses propriétés
+        {
+            OwnerActorClass = OwnerActor->GetClass();
+            UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : OwnerActor successfully found!"));
+        }
+        else
+        {
+            // Log ou gestion d'erreur si OwnerActor est nul
+            UE_LOG(LogTemp, Warning, TEXT("TIMELINE PLUGIN : OwnerActor is null in UTimelinePluginComponent constructor"));
+        }
+
+        // Set Available Types
+        TArray<FString> TypesToAdd = { "Boolean", "Integer", "Float", "Double", "Vector", "Rotator"};
+        AvailableTypes.Append(TypesToAdd);
+
+        // Set Available Variables of Available Types
+        GetVariablesFromParentBlueprint();
+
+        IsInitialized = true;
+    }
 }
 
 
@@ -54,10 +65,17 @@ void UTimelinePluginComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UTimelinePluginComponent::GetVariablesFromParentBlueprint()
 {
+    AvailableBools.Empty();
+    AvailableInts.Empty();
+    AvailableFloats.Empty();
+    AvailableDoubles.Empty();
+    AvailableVectors.Empty();
+    AvailableRotators.Empty();
+
     if (OwnerActor)
     {
         // Parcourir toutes les propriétés de la classe de l'acteur
-        for (TFieldIterator<FProperty> It(OwnerActorClass); It; ++It)
+        for (TFieldIterator<FProperty> It(OwnerActorClass, EFieldIteratorFlags::IncludeSuper); It; ++It)
         {
             FProperty* Property = *It;
 
@@ -78,6 +96,10 @@ void UTimelinePluginComponent::GetVariablesFromParentBlueprint()
                 else if (PropertyType == TEXT("float"))
                 {
                     AvailableFloats.Add(Property->GetName());
+                }
+                else if (PropertyType == TEXT("double"))
+                {
+                    AvailableDoubles.Add(Property->GetName());
                 }
                 else if (PropertyType == TEXT("FVector"))
                 {
@@ -134,6 +156,16 @@ void UTimelinePluginComponent::PopulateAvailableVariables()
             }
         }
     }
+    else if (SelectedType == "Double")
+    {
+        for (int32 i = 0; i < AvailableDoubles.Num(); ++i)
+        {
+            if (!IsVariableTracked(AvailableDoubles[i]))
+            {
+                AvailableVariables.Add(AvailableDoubles[i]);
+            }
+        }
+    }
     else if (SelectedType == "Vector")
     {
         for (int32 i = 0; i < AvailableVectors.Num(); ++i)
@@ -170,9 +202,7 @@ void UTimelinePluginComponent::OnVariableSelected(TSharedPtr<FString> NewSelecti
     {
         return; // Si déjà suivie, on ne fait rien
     }
-
-    // Lorsqu'une variable est sélectionnée, on l'ajoute à la liste des variables trackées
-    if (IsVariableTracked(*NewSelection))
+    else
     {
         TrackedVariables.Add(*NewSelection);
     }
@@ -182,38 +212,39 @@ void UTimelinePluginComponent::OnVariableSelected(TSharedPtr<FString> NewSelecti
     // Ajoutez la variable à la bonne TMap selon le type sélectionné
     if (Property)
     {
-        // Récupérer le type de la propriété
-        if (FIntProperty* IntProperty = CastField<FIntProperty>(Property))
+        FString PropertyType = Property->GetCPPType();
+        FStructProperty* StructProperty = (FStructProperty*)OwnerActorClass->FindPropertyByName(FName(*NewSelection));
+
+        // Filtrage en fonction du type demandé et ajout du nom à la liste
+        if (PropertyType == TEXT("bool"))
         {
-            int32 IntValue = IntProperty->GetPropertyValue_InContainer(OwnerActor);
-            TrackedInts.Add(*NewSelection, IntValue);
-        }
-        else if (FFloatProperty* FloatProperty = CastField<FFloatProperty>(Property))
-        {
-            float FloatValue = FloatProperty->GetPropertyValue_InContainer(OwnerActor);
-            TrackedFloats.Add(*NewSelection, FloatValue);
-        }
-        else if (FBoolProperty* BoolProperty = CastField<FBoolProperty>(Property))
-        {
-            bool BoolValue = BoolProperty->GetPropertyValue_InContainer(OwnerActor);
+            bool BoolValue = CastField<FBoolProperty>(Property)->GetPropertyValue_InContainer(OwnerActor);
             TrackedBools.Add(*NewSelection, BoolValue);
         }
-        else if (FStructProperty* StructProperty = (FStructProperty*)OwnerActorClass->FindPropertyByName(FName(*NewSelection)))
+        else if (PropertyType == TEXT("int32"))
         {
-            UScriptStruct* PropertyStruct = StructProperty->Struct;
-
-            // Vérification si c'est un FVector
-            if (StructProperty->Struct == TBaseStructure<FVector>::Get())
-            {
-                FVector* VectorValue = StructProperty->ContainerPtrToValuePtr<FVector>(OwnerActor);
-                TrackedVectors.Add(*NewSelection, *VectorValue);
-            }
-            // Vérification si c'est un FRotator
-            else if (PropertyStruct->GetName() == "Rotator")
-            {
-                FRotator* RotatorValue = StructProperty->ContainerPtrToValuePtr<FRotator>(OwnerActor);
-                TrackedRotators.Add(*NewSelection, *RotatorValue);
-            }
+            int32 IntValue = CastField<FIntProperty>(Property)->GetPropertyValue_InContainer(OwnerActor);
+            TrackedInts.Add(*NewSelection, IntValue);
+        }
+        else if (PropertyType == TEXT("float"))
+        {
+            float FloatValue = CastField<FFloatProperty>(Property)->GetPropertyValue_InContainer(OwnerActor);
+            TrackedFloats.Add(*NewSelection, FloatValue);
+        }
+        else if (PropertyType == TEXT("double"))
+        {
+            double DoubleValue = CastField<FDoubleProperty>(Property)->GetPropertyValue_InContainer(OwnerActor);
+            TrackedDoubles.Add(Property->GetName());
+        }
+        else if (PropertyType == TEXT("FVector"))
+        {
+            FVector* VectorValue = StructProperty->ContainerPtrToValuePtr<FVector>(OwnerActor);
+            TrackedVectors.Add(*NewSelection, *VectorValue);
+        }
+        else if (PropertyType == TEXT("FRotator"))
+        {
+            FRotator* RotatorValue = StructProperty->ContainerPtrToValuePtr<FRotator>(OwnerActor);
+            TrackedRotators.Add(*NewSelection, *RotatorValue);
         }
     }
 }

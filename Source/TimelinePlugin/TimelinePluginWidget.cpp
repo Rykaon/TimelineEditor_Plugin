@@ -29,18 +29,36 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
 
             if (!TimelineComponent)
             {
-                UE_LOG(LogTemp, Log, TEXT("TimelineComponent Not Found!"));
+                UE_LOG(LogTemp, Warning, TEXT("TIMELINE PLUGIN : TimelineComponent Not Found in TimelineWIdget!"));
             }
         }
     }
 
     IDetailCategoryBuilder& TimelineVariableCategory = DetailBuilder.EditCategory("Timeline Variables");
 
-    // Peupler les options pour le type
+    AddDropDowns(TimelineVariableCategory);
+    AddResetAndUpdateButton(TimelineVariableCategory);
+}
+
+
+
+
+
+//Create & Manage DropDowns
+void UTimelinePluginWidget::AddDropDowns(IDetailCategoryBuilder& Category)
+{
+    FSlateFontInfo SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
+
+    // Peupler les options pour le type et s'assurer que SelectedType corresponde au premier index
     TypeOptions.Empty();
     for (const FString& Type : TimelineComponent->AvailableTypes)
     {
         TypeOptions.Add(MakeShared<FString>(Type));
+    }
+
+    if (TimelineComponent->AvailableTypes.Num() > 0)
+    {
+        SelectedType = MakeShared<FString>(TimelineComponent->AvailableTypes[0]);
     }
 
     // Peupler les options pour les variables trackables
@@ -51,21 +69,27 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
     }
 
     // Ajouter les dropdowns dans la catégorie
-    TimelineVariableCategory.AddCustomRow(FText::FromString("Type and Variable"))
+    Category.AddCustomRow(FText::FromString("Type and Variable"))
+        .NameContent()
+        [
+            SNew(STextBlock).Text(FText::FromString("Variables To Track")).Font(SmallFont)
+        ]
         .ValueContent()
         [
-            SNew(SHorizontalBox)
+            SNew(SVerticalBox)
 
                 // Dropdown pour le type
-                + SHorizontalBox::Slot()
-                .AutoWidth()
+                + SVerticalBox::Slot()
+                .AutoHeight()
                 [
                     SNew(SComboBox<TSharedPtr<FString>>)
                         .OptionsSource(&TypeOptions)
                         .OnSelectionChanged(this, &UTimelinePluginWidget::OnTypeSelected)
-                        .OnGenerateWidget_Lambda([](TSharedPtr<FString> Item)
+                        .OnGenerateWidget_Lambda([SmallFont](TSharedPtr<FString> Item)
                             {
-                                return SNew(STextBlock).Text(FText::FromString(*Item));
+                                return SNew(STextBlock)
+                                    .Text(FText::FromString(*Item))
+                                    .Font(SmallFont);
                             })
                         .Content()
                         [
@@ -74,24 +98,27 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
                                     {
                                         return SelectedType.IsValid() ? FText::FromString(*SelectedType) : FText::FromString("Choose Type");
                                     })
+                                .Font(SmallFont)
                         ]
                 ]
 
                 // Espacement entre les deux combo boxes
-                + SHorizontalBox::Slot()
-                .AutoWidth()
-                .Padding(10.0f, 0.0f)
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                .Padding(0.0f, 1.0f)
 
                 // Dropdown pour la variable
-                + SHorizontalBox::Slot()
-                .AutoWidth()
+                + SVerticalBox::Slot()
+                .AutoHeight()
                 [
                     SNew(SComboBox<TSharedPtr<FString>>)
                         .OptionsSource(&VariableOptions)
                         .OnSelectionChanged(this, &UTimelinePluginWidget::OnVariableSelected)
-                        .OnGenerateWidget_Lambda([](TSharedPtr<FString> Item)
+                        .OnGenerateWidget_Lambda([SmallFont](TSharedPtr<FString> Item)
                             {
-                                return SNew(STextBlock).Text(FText::FromString(*Item));
+                                return SNew(STextBlock)
+                                    .Text(FText::FromString(*Item))
+                                    .Font(SmallFont);
                             })
                         .Content()
                         [
@@ -100,6 +127,7 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
                                     {
                                         return SelectedVariable.IsValid() ? FText::FromString(*SelectedVariable) : FText::FromString("Choose Variable");
                                     })
+                                .Font(SmallFont)
                         ]
                 ]
         ];
@@ -109,7 +137,7 @@ void UTimelinePluginWidget::OnTypeSelected(TSharedPtr<FString> NewSelection, ESe
 {
     if (NewSelection.IsValid())
     {
-        UE_LOG(LogTemp, Log, TEXT("Type selected: %s"), **NewSelection);
+        UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : Type selected: %s"), **NewSelection);
 
         // Logique de mise à jour pour les types disponibles
         TimelineComponent->OnTypeSelected(NewSelection);
@@ -120,6 +148,9 @@ void UTimelinePluginWidget::OnTypeSelected(TSharedPtr<FString> NewSelection, ESe
         {
             VariableOptions.Add(MakeShared<FString>(Variable));
         }
+
+        SelectedType = NewSelection;
+        SelectedVariable = nullptr;
     }
 }
 
@@ -127,9 +158,86 @@ void UTimelinePluginWidget::OnVariableSelected(TSharedPtr<FString> NewSelection,
 {
     if (NewSelection.IsValid())
     {
-        UE_LOG(LogTemp, Log, TEXT("Variable selected: %s"), **NewSelection);
+        UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : Variable selected: %s"), **NewSelection);
 
         // Ajout de la variable sélectionnée à la liste trackée
         TimelineComponent->OnVariableSelected(NewSelection);
+
+        SelectedVariable = NewSelection;
     }
+}
+
+
+
+
+
+// Create & Manage Buttons
+void UTimelinePluginWidget::AddResetAndUpdateButton(IDetailCategoryBuilder& Category)
+{
+    FSlateFontInfo SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
+
+    Category.AddCustomRow(FText::FromString("Variables Management"))
+        .NameContent()
+        [
+            SNew(STextBlock).Text(FText::FromString("Variables Management")).Font(SmallFont)
+        ]
+        .ValueContent()
+        [
+            SNew(SVerticalBox)
+
+                // Dropdown pour le type
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                [
+                    SNew(SButton)
+                        .Text(FText::FromString("Reset Tracked Variables"))
+                        .Content()
+                        [
+                            SNew(STextBlock)
+                                .Text(FText::FromString("Reset Tracked Variables"))
+                                .Font(SmallFont)
+                        ]
+                        .OnClicked(this, &UTimelinePluginWidget::ResetTrackedVariables)
+                ]
+
+                // Espacement entre les deux combo boxes
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                .Padding(0.0f, 1.0f)
+
+                // Dropdown pour la variable
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                [
+                    SNew(SButton)
+                        .Text(FText::FromString("Update Available Variables"))
+                        .Content()
+                        [
+                            SNew(STextBlock)
+                                .Text(FText::FromString("Update Available Variables"))
+                                .Font(SmallFont)
+                        ]
+                        .OnClicked(this, &UTimelinePluginWidget::UpdateAvailableVariables)
+                ]
+        ];
+}
+
+FReply UTimelinePluginWidget::ResetTrackedVariables()
+{
+    TimelineComponent->TrackedVariables.Empty();
+    TimelineComponent->TrackedBools.Empty();
+    TimelineComponent->TrackedInts.Empty();
+    TimelineComponent->TrackedFloats.Empty();
+    TimelineComponent->TrackedDoubles.Empty();
+    TimelineComponent->TrackedVectors.Empty();
+    TimelineComponent->TrackedRotators.Empty();
+
+    return FReply::Handled();
+}
+
+FReply UTimelinePluginWidget::UpdateAvailableVariables()
+{
+    TimelineComponent->GetVariablesFromParentBlueprint();
+
+    return FReply::Handled();
 }

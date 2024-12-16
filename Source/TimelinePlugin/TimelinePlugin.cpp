@@ -7,7 +7,7 @@ IMPLEMENT_MODULE(FTimelinePluginModule, MyEditorPlugin)
 
 void FTimelinePluginModule::StartupModule()
 {
-    UE_LOG(LogTemp, Log, TEXT("TimelinePlugin has started!"));
+    UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimelinePlugin has started!"));
 
     FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
@@ -20,6 +20,8 @@ void FTimelinePluginModule::StartupModule()
 
 void FTimelinePluginModule::ShutdownModule()
 {
+    UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimelinePlugin has shutdown!"));
+
     // Unregister la personnalisation à la fermeture
     if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
     {

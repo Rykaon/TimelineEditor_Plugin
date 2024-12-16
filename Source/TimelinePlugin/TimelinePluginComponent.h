@@ -13,6 +13,8 @@ class TIMELINEPLUGIN_API UTimelinePluginComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UTimelinePluginComponent();
+	
+	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -27,12 +29,18 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-public:	
+public:
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Timeline") Pour une variable cachée dans la fenêtre details
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
+	bool IsInitialized;
+
+
+
 	// OwnerActor References
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
 	AActor* OwnerActor;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
 	UClass* OwnerActorClass;
 
 	// Durée totale de l'animation
@@ -42,7 +50,7 @@ public:
 
 
 	// Available TrackedTypes
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
 	TArray<FString> AvailableTypes;
 
 	// Current TrackedType
@@ -65,6 +73,9 @@ public:
 	TArray<FString> AvailableFloats;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TArray<FString> AvailableDoubles;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	TArray<FString> AvailableVectors;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
@@ -85,6 +96,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	TMap<FString, float> TrackedFloats;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	TMap<FString, double> TrackedDoubles;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	TMap<FString, FVector> TrackedVectors;

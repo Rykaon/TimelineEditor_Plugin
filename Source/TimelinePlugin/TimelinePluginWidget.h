@@ -6,6 +6,7 @@
 #include "Widgets/Input/SComboBox.h"
 #include "Widgets/Views/SListView.h"
 #include "TimelinePluginComponent.h"
+#include "DetailCategoryBuilder.h"
 
 class TIMELINEPLUGIN_API UTimelinePluginWidget : public IDetailCustomization
 {
@@ -16,8 +17,15 @@ public:
     // Implémentation de la personnalisation
     virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
 
+    void AddDropDowns(IDetailCategoryBuilder& Category);
     void OnTypeSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
     void OnVariableSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
+    
+    void AddResetAndUpdateButton(IDetailCategoryBuilder& Category);
+    FReply ResetTrackedVariables();
+    FReply UpdateAvailableVariables();
+
+
 
 public:
     // Reference to TimelineComponent

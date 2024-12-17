@@ -8,9 +8,6 @@
 UTimelinePluginComponent::UTimelinePluginComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
-    // Set Default Animation Duration
-    AnimationDuration = 5.0f;
 }
 
 void UTimelinePluginComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "AnimationTimeline.h"
 #include "TimelinePluginComponent.generated.h"
 
 
@@ -43,9 +44,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
 	UClass* OwnerActorClass;
 
-	// Durée totale de l'animation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
-	float AnimationDuration;
+	// AnimationTimeline Structure
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	FAnimationTimeline AnimationTimeline;
 
 
 

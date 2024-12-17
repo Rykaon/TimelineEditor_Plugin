@@ -20,5 +20,11 @@ public class TimelinePlugin : ModuleRules
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });
-	}
+
+        PrivateIncludePaths.AddRange(new string[]
+        {
+            "TimelinePlugin/AnimationTimeline",
+            "TimelinePlugin/Source/TimelinePlugin/AnimationTimeline"
+        });
+    }
 }

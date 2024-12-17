@@ -1,7 +1,9 @@
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "CoreMinimal.h"
+#include "Slate.h"
+#include "TimelineTrackWidget.h"
 #include "TimelinePluginComponent.generated.h"
 
 
@@ -28,7 +30,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
+	
 public:
 	// UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Timeline") Pour une variable cachée dans la fenêtre details
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
@@ -46,6 +48,10 @@ public:
 	// Durée totale de l'animation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	float AnimationDuration;
+
+	// Référence to Animation Widget
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TimelineAnimation")
+	STimelineTrackWidget AnimationTimeline;
 
 
 

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "TimelinePluginWidget.h"
 #include "AnimationTimeline.h"
 #include "TimelinePluginComponent.generated.h"
 
@@ -44,9 +45,16 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
 	UClass* OwnerActorClass;
 
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
+	class UTimelinePluginWidget* TimelinePluginWidget;
+
 	// AnimationTimeline Structure
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	FAnimationTimeline AnimationTimeline;
+
+	// AnimationTimelineDuration
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
+	float TimelineAnimationDuration;
 
 
 
@@ -86,7 +94,7 @@ public:
 
 	// Variables already Tracked
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
-	TArray<FString> TrackedVariables;
+	TMap<FString, FString> TrackedVariables;
 
 	// TrackedVariables Of Available TrackedType
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")

@@ -8,6 +8,9 @@
 #include "DetailWidgetRow.h"
 #include "Widgets/Input/SComboBox.h"
 #include "Widgets/Text/STextBlock.h"
+#include <string>
+#include <sstream>
+#include <iostream>
 
 TSharedRef<IDetailCustomization> UTimelinePluginWidget::MakeInstance()
 {
@@ -30,6 +33,10 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
             if (!TimelineComponent)
             {
                 UE_LOG(LogTemp, Warning, TEXT("TIMELINE PLUGIN : TimelineComponent Not Found in TimelineWIdget!"));
+            }
+            else
+            {
+                TimelineComponent->TimelinePluginWidget = this;
             }
         }
     }
@@ -240,4 +247,63 @@ FReply UTimelinePluginWidget::UpdateAvailableVariables()
     TimelineComponent->GetVariablesFromParentBlueprint();
 
     return FReply::Handled();
+}
+
+
+
+
+
+// Create Duration Typing Field
+void UTimelinePluginWidget::AddTiemlineDurationTextField(IDetailCategoryBuilder& Category)
+{
+    // Créer le widget et l'assigner à la variable
+    TimelineDurationTextBox = SNew(SEditableTextBox)
+        .Text(this, &UTimelinePluginWidget::GetTimelineDuration)
+        .OnTextCommitted(this, &UTimelinePluginWidget::OnTimelineDurationCommitted)
+        .SelectAllTextWhenFocused(true)
+        .MinDesiredWidth(200.0f);
+
+    // Ajouter le widget à la catégorie
+    Category.AddCustomRow(FText::FromString("Enter Timeline Name"))
+        .NameContent()
+        [
+            SNew(STextBlock)
+                .Text(FText::FromString("Timeline Name"))
+        ]
+        .ValueContent()
+        [
+            TimelineDurationTextBox.ToSharedRef()
+        ];
+}
+
+FText UTimelinePluginWidget::GetTimelineDuration() const
+{
+    FText DurationText = FText::AsNumber(TimelineComponent->AnimationTimeline.Duration);
+    FText AdditionalText = FText::FromString(" seconds");
+
+    return FText::Format(FText::FromString("{0}{1}"), DurationText, AdditionalText);;
+}
+
+void UTimelinePluginWidget::OnTimelineDurationCommitted(const FText& NewText, ETextCommit::Type CommitType)
+{
+    if (CommitType == ETextCommit::OnEnter || CommitType == ETextCommit::OnUserMovedFocus)
+    {
+        FString TypingFieldContent = NewText.ToString();
+
+        const std::string& str = TCHAR_TO_UTF8(*TypingFieldContent);
+        std::istringstream iss(str);
+        float value;
+        iss >> value;
+
+        if (!iss.fail() && iss.eof())
+        {
+            TimelineComponent->AnimationTimeline.Duration = value;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimelineDuration not set as valid Float!"));
+        }
+
+        TimelineDurationTextBox->SetText(GetTimelineDuration());
+    }
 }

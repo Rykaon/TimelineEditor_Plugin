@@ -9,7 +9,7 @@ struct FAnimationTimeline
 {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     float Duration;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)

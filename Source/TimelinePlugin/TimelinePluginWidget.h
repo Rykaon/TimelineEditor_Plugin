@@ -25,18 +25,25 @@ public:
     FReply ResetTrackedVariables();
     FReply UpdateAvailableVariables();
 
+    void AddTiemlineDurationTextField(IDetailCategoryBuilder& Category);
+    FText GetTimelineDuration() const;
+    void OnTimelineDurationCommitted(const FText& NewText, ETextCommit::Type CommitType);
+
 
 
 public:
     // Reference to TimelineComponent
     UPROPERTY()
-    UTimelinePluginComponent* TimelineComponent;
+    class UTimelinePluginComponent* TimelineComponent;
 
     UPROPERTY(meta = (BindWidget))
     class UComboBoxString* TypeDropdown;
 
     UPROPERTY(meta = (BindWidget))
     class UComboBoxString* VariableDropdown;
+
+    UPROPERTY(meta = (BindWidget))
+    TSharedPtr<SEditableTextBox> TimelineDurationTextBox;
 
     TArray<TSharedPtr<FString>> TypeOptions;
     TArray<TSharedPtr<FString>> VariableOptions;

@@ -201,7 +201,7 @@ void UTimelinePluginComponent::OnVariableSelected(TSharedPtr<FString> NewSelecti
     }
     else
     {
-        TrackedVariables.Add(*NewSelection);
+        TrackedVariables.Add(*NewSelection, SelectedType);
     }
 
     FProperty* Property = OwnerActorClass->FindPropertyByName(FName(*NewSelection));

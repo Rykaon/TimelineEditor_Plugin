@@ -43,8 +43,10 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
 
     IDetailCategoryBuilder& TimelineVariableCategory = DetailBuilder.EditCategory("Timeline Variables");
 
+    UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : CustomizeDetails"));
     AddDropDowns(TimelineVariableCategory);
     AddResetAndUpdateButton(TimelineVariableCategory);
+    AddTimelineDurationTextField(TimelineVariableCategory);
 }
 
 
@@ -254,7 +256,7 @@ FReply UTimelinePluginWidget::UpdateAvailableVariables()
 
 
 // Create Duration Typing Field
-void UTimelinePluginWidget::AddTiemlineDurationTextField(IDetailCategoryBuilder& Category)
+void UTimelinePluginWidget::AddTimelineDurationTextField(IDetailCategoryBuilder& Category)
 {
     // Créer le widget et l'assigner à la variable
     TimelineDurationTextBox = SNew(SEditableTextBox)
@@ -264,16 +266,18 @@ void UTimelinePluginWidget::AddTiemlineDurationTextField(IDetailCategoryBuilder&
         .MinDesiredWidth(200.0f);
 
     // Ajouter le widget à la catégorie
-    Category.AddCustomRow(FText::FromString("Enter Timeline Name"))
+    Category.AddCustomRow(FText::FromString("Timeline Duration"))
         .NameContent()
         [
             SNew(STextBlock)
-                .Text(FText::FromString("Timeline Name"))
+                .Text(FText::FromString("Timeline Duration"))
         ]
         .ValueContent()
         [
             TimelineDurationTextBox.ToSharedRef()
         ];
+
+    UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimelineDuration TextBos successfully created!"));
 }
 
 FText UTimelinePluginWidget::GetTimelineDuration() const

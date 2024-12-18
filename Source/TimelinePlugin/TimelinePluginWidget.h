@@ -25,7 +25,7 @@ public:
     FReply ResetTrackedVariables();
     FReply UpdateAvailableVariables();
 
-    void AddTiemlineDurationTextField(IDetailCategoryBuilder& Category);
+    void AddTimelineDurationTextField(IDetailCategoryBuilder& Category);
     FText GetTimelineDuration() const;
     void OnTimelineDurationCommitted(const FText& NewText, ETextCommit::Type CommitType);
 

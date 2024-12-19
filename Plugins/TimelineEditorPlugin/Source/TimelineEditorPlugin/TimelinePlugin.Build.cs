@@ -15,6 +15,7 @@ public class TimelinePlugin : ModuleRules
             "Slate",
             "SlateCore",
             "EditorStyle",
+            "Paper2D",
             "PropertyEditor",
             "UnrealEd"
         });

@@ -17,6 +17,7 @@ public:
 
     // Implémentation de la personnalisation
     virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
+    void InitializeComponent();
 
     void AddDropDowns(IDetailCategoryBuilder& Category);
     void OnTypeSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);

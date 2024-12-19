@@ -16,7 +16,7 @@
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "TimelineEditorPlugin",
+			"Name": "TimelinePlugin",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}

@@ -50,6 +50,19 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
     IDetailCategoryBuilder& TimelineWidgetCategory = DetailBuilder.EditCategory("Animation Timeline");
 
     AddTimelineWidget(TimelineWidgetCategory);
+
+    InitializeComponent();
+}
+
+void UTimelinePluginWidget::InitializeComponent() 
+{
+    if (!TimelineComponent->IsInitialized)
+    {
+        TimelineComponent->InitializeComponent();
+    }
+    
+    TimelineComponent->AnimationTimeline.Duration = 5.0f;
+    TimelineComponent->AnimationTimelineDuration = 5.0f;
 }
 
 
@@ -299,6 +312,11 @@ void UTimelinePluginWidget::OnTimelineDurationCommitted(const FText& NewText, ET
 {
     if (CommitType == ETextCommit::OnEnter || CommitType == ETextCommit::OnUserMovedFocus)
     {
+        if (!TimelineComponent->IsInitialized)
+        {
+            TimelineComponent->InitializeComponent();
+        }
+
         FString TypingFieldContent = NewText.ToString();
 
         const std::string& str = TCHAR_TO_UTF8(*TypingFieldContent);

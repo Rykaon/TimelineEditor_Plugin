@@ -13,11 +13,19 @@ public:
 
     void Construct(const FArguments& InArgs);
     
+    // Construire et ajouter les widgets
     void AddTimeline();
+
+    // Modifier et manager TimelineDuration, CurrentTime et TimeScale
     void SetTimelineDuration();
     void SetCurrentTime(float Value);
     FText GetCurrentTimeText() const;
     void OnCurrentTimeCommitted(const FText& NewText, ETextCommit::Type CommitType);
+    void SetTimeScale(float Value);
+    FText GetTimeScaleText() const;
+    void OnTimeScaleCommitted(const FText& NewText, ETextCommit::Type CommitType);
+    float GetTimeScaleSliderValue() const;
+    void OnTimeScaleSliderValueChanged(float NewValue);
 
     FReply OnTimelineClicked(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent);
     float GetTimeFromClick(const FVector2D& ClickPosition) const;
@@ -29,15 +37,23 @@ public:
 
     class UTimelinePluginWidget* TimelinePluginWidget;
     TSharedPtr<SEditableTextBox> CurrentTimeTextBox;
+    TSharedPtr<SEditableTextBox> TimeScaleTextBox;
+    TSharedPtr<SSlider> TimeScaleSlider;
+    
+    TSharedPtr<SVerticalBox> VariablesField;
+    TSharedPtr<SVerticalBox> TracksField;
+    TSharedPtr<SScrollBox> TracksScrollBox;
 
     float TimelineDuration;
-
     float CurrentTime;
+    float TimeScale;
 
     float SliderWidth;
 
     FSlateFontInfo SmallFont;
-
-    TSharedPtr<SScrollBox> TracksScrollBox;
-    TSharedPtr<SSlider> TimeSlider;
+    FSlateBrush TimelineUnitTopBrush;
+    FSlateBrush TimelineUnitBottomBrush;
+    FSlateBrush TimelineTrackTopBrush;
+    FSlateBrush TimelineTrackBrush;
+    FSlateBrush TimelineTrackBottomBrush;
 };

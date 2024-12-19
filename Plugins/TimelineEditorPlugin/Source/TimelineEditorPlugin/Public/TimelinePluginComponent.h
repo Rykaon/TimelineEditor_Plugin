@@ -21,6 +21,8 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	void InitializeComponent();
+
 	bool IsVariableTracked(const FString& VariableName);
 	void PopulateAvailableVariables();
 	void GetVariablesFromParentBlueprint();

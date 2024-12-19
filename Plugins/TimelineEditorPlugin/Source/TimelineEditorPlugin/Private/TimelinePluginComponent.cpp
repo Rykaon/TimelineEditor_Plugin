@@ -16,29 +16,34 @@ void UTimelinePluginComponent::PostEditChangeProperty(FPropertyChangedEvent& Pro
 
     if (!IsInitialized)
     {
-        // Get OwnerActor Reference
-        OwnerActor = GetOwner();
-
-        if (OwnerActor != nullptr)  // Vérifie si l'acteur est valide avant d'accéder à ses propriétés
-        {
-            OwnerActorClass = OwnerActor->GetClass();
-            UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : OwnerActor successfully found!"));
-        }
-        else
-        {
-            // Log ou gestion d'erreur si OwnerActor est nul
-            UE_LOG(LogTemp, Warning, TEXT("TIMELINE PLUGIN : OwnerActor is null in UTimelinePluginComponent constructor"));
-        }
-
-        // Set Available Types
-        TArray<FString> TypesToAdd = { "Boolean", "Integer", "Float", "Double", "Vector", "Rotator"};
-        AvailableTypes.Append(TypesToAdd);
-
-        // Set Available Variables of Available Types
-        GetVariablesFromParentBlueprint();
-
-        IsInitialized = true;
+        InitializeComponent();
     }
+}
+
+void UTimelinePluginComponent::InitializeComponent()
+{
+    // Get OwnerActor Reference
+    OwnerActor = GetOwner();
+
+    if (OwnerActor != nullptr)  // Vérifie si l'acteur est valide avant d'accéder à ses propriétés
+    {
+        OwnerActorClass = OwnerActor->GetClass();
+        UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : OwnerActor successfully found!"));
+    }
+    else
+    {
+        // Log ou gestion d'erreur si OwnerActor est nul
+        UE_LOG(LogTemp, Warning, TEXT("TIMELINE PLUGIN : OwnerActor is null in UTimelinePluginComponent constructor"));
+    }
+
+    // Set Available Types
+    TArray<FString> TypesToAdd = { "Boolean", "Integer", "Float", "Double", "Vector", "Rotator" };
+    AvailableTypes.Append(TypesToAdd);
+
+    // Set Available Variables of Available Types
+    GetVariablesFromParentBlueprint();
+
+    IsInitialized = true;
 }
 
 

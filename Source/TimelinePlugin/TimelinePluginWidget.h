@@ -40,7 +40,6 @@ public:
     UPROPERTY()
     class UTimelinePluginComponent* TimelineComponent;
 
-    UPROPERTY(meta = (BindWidget))
     TSharedPtr<SAnimationTimelineWidget> AnimationTimelineWidget;
 
     UPROPERTY(meta = (BindWidget))

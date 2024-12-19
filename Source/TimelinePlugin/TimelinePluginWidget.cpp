@@ -43,10 +43,13 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
 
     IDetailCategoryBuilder& TimelineVariableCategory = DetailBuilder.EditCategory("Timeline Variables");
 
-    UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : CustomizeDetails"));
     AddDropDowns(TimelineVariableCategory);
     AddResetAndUpdateButton(TimelineVariableCategory);
     AddTimelineDurationTextField(TimelineVariableCategory);
+
+    IDetailCategoryBuilder& TimelineWidgetCategory = DetailBuilder.EditCategory("Animation Timeline");
+
+    AddTimelineWidget(TimelineWidgetCategory);
 }
 
 
@@ -258,9 +261,12 @@ FReply UTimelinePluginWidget::UpdateAvailableVariables()
 // Create Duration Typing Field
 void UTimelinePluginWidget::AddTimelineDurationTextField(IDetailCategoryBuilder& Category)
 {
+    FSlateFontInfo SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
+
     // Créer le widget et l'assigner à la variable
     TimelineDurationTextBox = SNew(SEditableTextBox)
         .Text(this, &UTimelinePluginWidget::GetTimelineDuration)
+        .Font(SmallFont)
         .OnTextCommitted(this, &UTimelinePluginWidget::OnTimelineDurationCommitted)
         .SelectAllTextWhenFocused(true)
         .MinDesiredWidth(200.0f);
@@ -270,14 +276,15 @@ void UTimelinePluginWidget::AddTimelineDurationTextField(IDetailCategoryBuilder&
         .NameContent()
         [
             SNew(STextBlock)
-                .Text(FText::FromString("Timeline Duration"))
+                .Text(FText::FromString("Timeline Duration")).Font(SmallFont)
+
         ]
         .ValueContent()
         [
             TimelineDurationTextBox.ToSharedRef()
         ];
 
-    UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimelineDuration TextBos successfully created!"));
+    UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimelineDuration TextBox successfully created!"));
 }
 
 FText UTimelinePluginWidget::GetTimelineDuration() const
@@ -302,6 +309,7 @@ void UTimelinePluginWidget::OnTimelineDurationCommitted(const FText& NewText, ET
         if (!iss.fail() && iss.eof())
         {
             TimelineComponent->AnimationTimeline.Duration = value;
+            TimelineComponent->AnimationTimelineDuration = value;
         }
         else
         {
@@ -310,4 +318,22 @@ void UTimelinePluginWidget::OnTimelineDurationCommitted(const FText& NewText, ET
 
         TimelineDurationTextBox->SetText(GetTimelineDuration());
     }
+}
+
+
+
+
+
+// Create Timeline Widget
+void UTimelinePluginWidget::AddTimelineWidget(IDetailCategoryBuilder& Category)
+{
+    AnimationTimelineWidget = SNew(SAnimationTimelineWidget);
+    AnimationTimelineWidget->TimelinePluginWidget = this;
+    AnimationTimelineWidget->AddTimeline();
+
+    Category.AddCustomRow(FText::FromString("Animation Timeline"))
+        .WholeRowContent()
+        [
+            AnimationTimelineWidget.ToSharedRef()
+        ];
 }

@@ -49,12 +49,12 @@ public:
 	class UTimelinePluginWidget* TimelinePluginWidget;
 
 	// AnimationTimeline Structure
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	FAnimationTimeline AnimationTimeline;
 
 	// AnimationTimelineDuration
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
-	float TimelineAnimationDuration;
+	float AnimationTimelineDuration;
 
 
 

@@ -6,6 +6,7 @@
 #include "Widgets/Input/SComboBox.h"
 #include "Widgets/Views/SListView.h"
 #include "TimelinePluginComponent.h"
+#include "AnimationTimelineWidget.h"
 #include "DetailCategoryBuilder.h"
 
 class TIMELINEPLUGIN_API UTimelinePluginWidget : public IDetailCustomization
@@ -29,12 +30,18 @@ public:
     FText GetTimelineDuration() const;
     void OnTimelineDurationCommitted(const FText& NewText, ETextCommit::Type CommitType);
 
+    void AddTimelineWidget(IDetailCategoryBuilder& Category);
+
+
 
 
 public:
     // Reference to TimelineComponent
     UPROPERTY()
     class UTimelinePluginComponent* TimelineComponent;
+
+    UPROPERTY(meta = (BindWidget))
+    TSharedPtr<SAnimationTimelineWidget> AnimationTimelineWidget;
 
     UPROPERTY(meta = (BindWidget))
     class UComboBoxString* TypeDropdown;

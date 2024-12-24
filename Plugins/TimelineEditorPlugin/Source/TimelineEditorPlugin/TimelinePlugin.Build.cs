@@ -17,7 +17,10 @@ public class TimelinePlugin : ModuleRules
             "EditorStyle",
             "Paper2D",
             "PropertyEditor",
-            "UnrealEd"
+            "UnrealEd",
+            "UMG",
+            "RenderCore",
+            "RHI"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });

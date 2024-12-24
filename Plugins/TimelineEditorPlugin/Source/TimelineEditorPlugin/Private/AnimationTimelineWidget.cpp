@@ -2,6 +2,9 @@
 #include "Slate.h"
 #include "TimelinePluginWidget.h"
 #include "PaperSprite.h"
+#include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/Texture.h"
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -11,47 +14,137 @@ void SAnimationTimelineWidget::Construct(const FArguments& InArgs)
     TimelineDuration = 5.0f;
     CurrentTime = 0.0f;
     TimeScale = 100.0f;
+    TrackFieldWidth = (TimelineDuration * 100.0f) * (100.0f / TimeScale);
+
+    BrushImageSizeAttribute = TAttribute<FVector2D>::Create(TAttribute<FVector2D>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetBrushImageSize));
+    TrackFieldWidthAttribute = TAttribute<FOptionalSize>::Create(TAttribute<FOptionalSize>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTrackFieldWidth));
+
+    TimelineUnitTopMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/TimelineEditorPlugin/Textures/M_TimelineUnitTop.M_TimelineUnitTop"));
+    TimelineUnitBottomMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/TimelineEditorPlugin/Textures/M_TimelineUnitBottom.M_TimelineUnitBottom"));
+    TimelineTrackTopMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/TimelineEditorPlugin/Textures/M_TimelineTrackTop.M_TimelineTrackTop"));
+    TimelineTrackMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/TimelineEditorPlugin/Textures/M_TimelineTrack.M_TimelineTrack"));
+    TimelineTrackBottomMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/TimelineEditorPlugin/Textures/M_TimelineTrackBottom.M_TimelineTrackBottom"));
+
+    if (!TimelineUnitTopMaterial)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to load material for TimelineUnitTop"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, TEXT("Successfully loaded material for TimelineUnitTop"));
+    }
+
+    TimelineUnitTopMaterialDynamic = UMaterialInstanceDynamic::Create(TimelineUnitTopMaterial, nullptr);
+    TimelineUnitBottomMaterialDynamic = UMaterialInstanceDynamic::Create(TimelineUnitBottomMaterial, nullptr);
+    TimelineTrackTopMaterialDynamic = UMaterialInstanceDynamic::Create(TimelineTrackTopMaterial, nullptr);
+    TimelineTrackMaterialDynamic = UMaterialInstanceDynamic::Create(TimelineTrackMaterial, nullptr);
+    TimelineTrackBottomMaterialDynamic = UMaterialInstanceDynamic::Create(TimelineTrackBottomMaterial, nullptr);
+
+    TimelineUnitTopBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineUnitTopBrush));
+    TimelineUnitBottomBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineUnitBottomBrush));
+    TimelineTrackTopBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineTrackTopBrush));
+    TimelineTrackBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineTrackBrush));
+    TimelineTrackBottomBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineTrackBottomBrush));
 
     SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
 
-    TimelineUnitTopBrush.SetResourceObject(LoadObject<UPaperSprite>(nullptr, TEXT("/TimelineEditorPlugin/Textures/SPR_TimelineUnitTop")));
-    TimelineUnitTopBrush.ImageSize = FVector2D(100.0f, 30.0f);
+    //TimelineUnitTopBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineUnitTop")));
+    TimelineUnitTopBrush.SetResourceObject(TimelineUnitTopMaterialDynamic);
     TimelineUnitTopBrush.Tiling = ESlateBrushTileType::Horizontal;
 
-    TimelineUnitBottomBrush.SetResourceObject(LoadObject<UPaperSprite>(nullptr, TEXT("/TimelineEditorPlugin/Textures/SPR_TimelineUnitBottom")));
-    TimelineUnitBottomBrush.ImageSize = FVector2D(100.0f, 30.0f);
+    //TimelineUnitBottomBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineUnitBottom")));
+    TimelineUnitBottomBrush.SetResourceObject(TimelineUnitBottomMaterialDynamic);
     TimelineUnitBottomBrush.Tiling = ESlateBrushTileType::Horizontal;
 
-    TimelineTrackTopBrush.SetResourceObject(LoadObject<UPaperSprite>(nullptr, TEXT("/TimelineEditorPlugin/Textures/SPR_TimelineTrackTop")));
-    TimelineTrackTopBrush.ImageSize = FVector2D(100.0f, 30.0f);
+    //TimelineTrackTopBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineTrackTop")));
+    TimelineTrackTopBrush.SetResourceObject(TimelineTrackTopMaterialDynamic);
     TimelineTrackTopBrush.Tiling = ESlateBrushTileType::Horizontal;
 
-    TimelineTrackBrush.SetResourceObject(LoadObject<UPaperSprite>(nullptr, TEXT("/TimelineEditorPlugin/Textures/SPR_TimelineTrack")));
-    TimelineTrackBrush.ImageSize = FVector2D(100.0f, 30.0f);
+    //TimelineTrackBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineTrack")));
+    TimelineTrackBrush.SetResourceObject(TimelineTrackMaterialDynamic);
     TimelineTrackBrush.Tiling = ESlateBrushTileType::Horizontal;
 
-    TimelineTrackBottomBrush.SetResourceObject(LoadObject<UPaperSprite>(nullptr, TEXT("/TimelineEditorPlugin/Textures/SPR_TimelineTrackBottom")));
-    TimelineTrackBottomBrush.ImageSize = FVector2D(100.0f, 30.0f);
+    //TimelineTrackBottomBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineTrackBottom")));
+    TimelineTrackBottomBrush.SetResourceObject(TimelineTrackBottomMaterialDynamic);
     TimelineTrackBottomBrush.Tiling = ESlateBrushTileType::Horizontal;
+
+    SetBrushImageSize(TimeScale, 30.0f);
+}
+
+void SAnimationTimelineWidget::InvalidateWidget(TSharedPtr<SWidget> Widget)
+{
+    if (Widget.IsValid())
+    {
+        UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : Plugin Invalidate!"));
+        Widget->Invalidate(EInvalidateWidgetReason::Paint);
+    }
+}
+
+FOptionalSize SAnimationTimelineWidget::GetTrackFieldWidth() const
+{
+    return FOptionalSize(TrackFieldWidth);
+}
+
+FVector2D SAnimationTimelineWidget::GetBrushImageSize() const
+{
+    return FVector2D(TimeScale, 30.0f);
+}
+
+void SAnimationTimelineWidget::SetBrushImageSize(float WidthValue, float HeightValue)
+{
+    TimelineUnitTopBrush.ImageSize = FVector2D(WidthValue, HeightValue);
+    TimelineUnitBottomBrush.ImageSize = FVector2D(WidthValue, HeightValue);
+    TimelineTrackTopBrush.ImageSize = FVector2D(WidthValue, HeightValue);
+    TimelineTrackBrush.ImageSize = FVector2D(WidthValue, HeightValue);
+    TimelineTrackBottomBrush.ImageSize = FVector2D(WidthValue, HeightValue);
+
+    TimelineUnitTopMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
+    TimelineUnitBottomMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
+    TimelineTrackTopMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
+    TimelineTrackMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
+    TimelineTrackBottomMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
+}
+
+const FSlateBrush* SAnimationTimelineWidget::GetTimelineUnitTopBrush() const
+{
+    return &TimelineUnitTopBrush;
+}
+
+const FSlateBrush* SAnimationTimelineWidget::GetTimelineUnitBottomBrush() const
+{
+    return &TimelineUnitBottomBrush;
+}
+
+const FSlateBrush* SAnimationTimelineWidget::GetTimelineTrackTopBrush() const
+{
+    return &TimelineTrackTopBrush;
+}
+
+const FSlateBrush* SAnimationTimelineWidget::GetTimelineTrackBrush() const
+{
+    return &TimelineTrackBrush;
+}
+
+const FSlateBrush* SAnimationTimelineWidget::GetTimelineTrackBottomBrush() const
+{
+    return &TimelineTrackBottomBrush;
 }
 
 void SAnimationTimelineWidget::AddTimeline()
 {
-    SetTimelineDuration();
-
     CurrentTimeTextBox = SNew(SEditableTextBox)
         .Text(this, &SAnimationTimelineWidget::GetCurrentTimeText)
         .Font(SmallFont)
         .OnTextCommitted(this, &SAnimationTimelineWidget::OnCurrentTimeCommitted)
         .SelectAllTextWhenFocused(true);
-        //.MinDesiredWidth(100.0f);
+    //.MinDesiredWidth(100.0f);
 
     TimeScaleTextBox = SNew(SEditableTextBox)
         .Text(this, &SAnimationTimelineWidget::GetTimeScaleText)
         .Font(SmallFont)
         .OnTextCommitted(this, &SAnimationTimelineWidget::OnTimeScaleCommitted)
         .SelectAllTextWhenFocused(true);
-        //.MinDesiredWidth(100.0f);
+    //.MinDesiredWidth(100.0f);
 
     ChildSlot
         [
@@ -95,11 +188,11 @@ void SAnimationTimelineWidget::AddTimeline()
                 .AutoHeight()
                 [
                     SNew(SHorizontalBox)
-                        // Slot pour CurrentTimeTextBox encapsulé dans une SVerticalBox
+                        // Slot pour CurrentTimeTextBox encapsulï¿½ dans une SVerticalBox
                         + SHorizontalBox::Slot()
                         .AutoWidth()
                         [
-                            SAssignNew(VariablesField, SVerticalBox) // Assigne la SVerticalBox à VariablesField
+                            SAssignNew(VariablesField, SVerticalBox) // Assigne la SVerticalBox ï¿½ VariablesField
                                 + SVerticalBox::Slot()
                                 .AutoHeight()
                                 [
@@ -112,7 +205,7 @@ void SAnimationTimelineWidget::AddTimeline()
                                 ]
                         ]
 
-                        // Slot pour la frise scrollable encapsulé dans une SVerticalBox
+                        // Slot pour la frise scrollable encapsulï¿½ dans une SVerticalBox
                         + SHorizontalBox::Slot()
                         .FillWidth(1.0f)
                         [
@@ -120,16 +213,17 @@ void SAnimationTimelineWidget::AddTimeline()
                                 .Orientation(Orient_Horizontal) // Scroll horizontal uniquement
                                 + SScrollBox::Slot()
                                 [
-                                    SAssignNew(TracksField, SVerticalBox) // Assigne la SVerticalBox à KeyFramesField
+                                    SAssignNew(TracksField, SVerticalBox) // Assigne la SVerticalBox ï¿½ KeyFramesField
                                         + SVerticalBox::Slot()
                                         .AutoHeight()
                                         [
                                             SNew(SBox)
                                                 .MinDesiredWidth(500.0f) // Largeur minimale de la frise
+                                                .WidthOverride(TrackFieldWidthAttribute)
                                                 .HeightOverride(30.0f)   // Hauteur fixe de la frise
                                                 [
-                                                    SNew(SImage)
-                                                        .Image(&TimelineUnitTopBrush)
+                                                    SAssignNew(TimelineUnitTopImage, SImage)
+                                                        .Image(TimelineUnitTopBrushAttribute)
                                                         .OnMouseButtonDown(this, &SAnimationTimelineWidget::OnTimelineClicked)
                                                 ]
                                         ]
@@ -138,10 +232,11 @@ void SAnimationTimelineWidget::AddTimeline()
                                         [
                                             SNew(SBox)
                                                 .MinDesiredWidth(500.0f) // Largeur minimale de la frise
+                                                .WidthOverride(TrackFieldWidthAttribute)
                                                 .HeightOverride(30.0f)   // Hauteur fixe de la frise
                                                 [
-                                                    SNew(SImage)
-                                                        .Image(&TimelineUnitBottomBrush)
+                                                    SAssignNew(TimelineUnitBottomImage, SImage)
+                                                        .Image(TimelineUnitBottomBrushAttribute)
                                                         .OnMouseButtonDown(this, &SAnimationTimelineWidget::OnTimelineClicked)
                                                 ]
                                         ]
@@ -152,23 +247,36 @@ void SAnimationTimelineWidget::AddTimeline()
         ];
 }
 
-void SAnimationTimelineWidget::SetTimelineDuration() 
+void SAnimationTimelineWidget::SetTimelineDuration()
 {
     TimelineDuration = TimelinePluginWidget->TimelineComponent->AnimationTimelineDuration;
 
-    if (TimelineDuration > 1) 
+    if (TimelineDuration > 1)
     {
-        SliderWidth = TimelineDuration * 50;
+        TrackFieldWidth = (TimelineDuration * 100.0f) * (100.0f / TimeScale);
     }
-    else 
+    else
     {
-        SliderWidth = 50;
+        TrackFieldWidth = (5 * 100.0f) * (100.0f / TimeScale);
     }
+
+    InvalidateWidget(TracksField);
 }
 
 void SAnimationTimelineWidget::SetCurrentTime(float Value)
 {
     CurrentTime = Value;
+}
+
+void SAnimationTimelineWidget::SetTimeScale(float Value)
+{
+    TimeScale = Value;
+    TimeScaleTextBox->SetText(GetTimeScaleText());
+
+    SetBrushImageSize(TimeScale, 30.0f);
+
+    UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimeScale set!"));
+    SetTimelineDuration();
 }
 
 FText SAnimationTimelineWidget::GetCurrentTimeText() const
@@ -205,11 +313,6 @@ void SAnimationTimelineWidget::OnCurrentTimeCommitted(const FText& NewText, ETex
     }
 }
 
-void SAnimationTimelineWidget::SetTimeScale(float Value)
-{
-    TimeScale = Value;
-}
-
 FText SAnimationTimelineWidget::GetTimeScaleText() const
 {
     return FText::AsNumber(TimeScale);
@@ -231,6 +334,7 @@ void SAnimationTimelineWidget::OnTimeScaleCommitted(const FText& NewText, ETextC
             if (value >= 10.0f && value <= 200.0f)
             {
                 SetTimeScale(value);
+                InvalidateWidget(TimeScaleSlider);
             }
             else
             {
@@ -241,6 +345,8 @@ void SAnimationTimelineWidget::OnTimeScaleCommitted(const FText& NewText, ETextC
         {
             UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimeScale not set as valid Float!"));
         }
+
+        TimeScaleTextBox->SetText(GetTimeScaleText());
     }
 }
 
@@ -264,7 +370,7 @@ FReply SAnimationTimelineWidget::OnTimelineClicked(const FGeometry& MyGeometry, 
 float SAnimationTimelineWidget::GetTimeFromClick(const FVector2D& ClickPosition) const
 {
     float ClickX = ClickPosition.X;
-    return FMath::Clamp((ClickX / SliderWidth) * TimelineDuration, 0.0f, TimelineDuration);
+    return FMath::Clamp((ClickX / TrackFieldWidth) * TimelineDuration, 0.0f, TimelineDuration);
 }
 
 /*FText SAnimationTimelineWidget::GetCurrentTimeText() const

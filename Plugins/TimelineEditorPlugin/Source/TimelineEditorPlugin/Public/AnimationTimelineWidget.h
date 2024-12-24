@@ -2,6 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Slate.h"
+#include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/Texture.h"
 //#include "TimelinePluginWidget.h"
 //#include "AnimationTimelineWidget.generated.h"
 
@@ -12,6 +15,16 @@ public:
     SLATE_END_ARGS()
 
     void Construct(const FArguments& InArgs);
+    void InvalidateWidget(TSharedPtr<SWidget> Widget);
+    FOptionalSize GetTrackFieldWidth() const;
+    FVector2D GetBrushImageSize() const;
+    const FSlateBrush* GetTimelineUnitTopBrush() const;
+    const FSlateBrush* GetTimelineUnitBottomBrush() const;
+    const FSlateBrush* GetTimelineTrackTopBrush() const;
+    const FSlateBrush* GetTimelineTrackBrush() const;
+    const FSlateBrush* GetTimelineTrackBottomBrush() const;
+    void SetBrushImageSize(float WidthValue, float HeightValue);
+
     
     // Construire et ajouter les widgets
     void AddTimeline();
@@ -19,9 +32,9 @@ public:
     // Modifier et manager TimelineDuration, CurrentTime et TimeScale
     void SetTimelineDuration();
     void SetCurrentTime(float Value);
+    void SetTimeScale(float Value);
     FText GetCurrentTimeText() const;
     void OnCurrentTimeCommitted(const FText& NewText, ETextCommit::Type CommitType);
-    void SetTimeScale(float Value);
     FText GetTimeScaleText() const;
     void OnTimeScaleCommitted(const FText& NewText, ETextCommit::Type CommitType);
     float GetTimeScaleSliderValue() const;
@@ -44,11 +57,15 @@ public:
     TSharedPtr<SVerticalBox> TracksField;
     TSharedPtr<SScrollBox> TracksScrollBox;
 
+    TSharedPtr<SImage> TimelineUnitTopImage;
+    TSharedPtr<SImage> TimelineUnitBottomImage;
+
     float TimelineDuration;
     float CurrentTime;
     float TimeScale;
-
-    float SliderWidth;
+    TAttribute<FVector2D> BrushImageSizeAttribute;
+    float TrackFieldWidth;
+    TAttribute<FOptionalSize> TrackFieldWidthAttribute;
 
     FSlateFontInfo SmallFont;
     FSlateBrush TimelineUnitTopBrush;
@@ -56,4 +73,19 @@ public:
     FSlateBrush TimelineTrackTopBrush;
     FSlateBrush TimelineTrackBrush;
     FSlateBrush TimelineTrackBottomBrush;
+    UMaterialInterface* TimelineUnitTopMaterial;
+    UMaterialInterface* TimelineUnitBottomMaterial;
+    UMaterialInterface* TimelineTrackTopMaterial;
+    UMaterialInterface* TimelineTrackMaterial;
+    UMaterialInterface* TimelineTrackBottomMaterial;
+    UMaterialInstanceDynamic* TimelineUnitTopMaterialDynamic;
+    UMaterialInstanceDynamic* TimelineUnitBottomMaterialDynamic;
+    UMaterialInstanceDynamic* TimelineTrackTopMaterialDynamic;
+    UMaterialInstanceDynamic* TimelineTrackMaterialDynamic;
+    UMaterialInstanceDynamic* TimelineTrackBottomMaterialDynamic;
+    TAttribute<const FSlateBrush*> TimelineUnitTopBrushAttribute;
+    TAttribute<const FSlateBrush*> TimelineUnitBottomBrushAttribute;
+    TAttribute<const FSlateBrush*> TimelineTrackTopBrushAttribute;
+    TAttribute<const FSlateBrush*> TimelineTrackBrushAttribute;
+    TAttribute<const FSlateBrush*> TimelineTrackBottomBrushAttribute;
 };

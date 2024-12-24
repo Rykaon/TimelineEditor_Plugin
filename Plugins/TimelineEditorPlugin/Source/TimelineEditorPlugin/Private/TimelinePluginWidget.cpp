@@ -20,14 +20,14 @@ TSharedRef<IDetailCustomization> UTimelinePluginWidget::MakeInstance()
 void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
     TArray<UObject*> SelectedObjects;
-    GEditor->GetSelectedActors()->GetSelectedObjects(SelectedObjects);  // GEditor accède aux objets sélectionnés dans l'éditeur
+    GEditor->GetSelectedActors()->GetSelectedObjects(SelectedObjects);  // GEditor accï¿½de aux objets sï¿½lectionnï¿½s dans l'ï¿½diteur
 
     if (SelectedObjects.Num() > 0)
     {
         AActor* Actor = Cast<AActor>(SelectedObjects[0]);
         if (Actor)
         {
-            // Trouver le composant TimelinePluginComponent attaché à cet acteur
+            // Trouver le composant TimelinePluginComponent attachï¿½ ï¿½ cet acteur
             TimelineComponent = Actor->FindComponentByClass<UTimelinePluginComponent>();
 
             if (!TimelineComponent)
@@ -42,12 +42,11 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
     }
 
     IDetailCategoryBuilder& TimelineVariableCategory = DetailBuilder.EditCategory("Timeline Variables");
+    IDetailCategoryBuilder& TimelineWidgetCategory = DetailBuilder.EditCategory("Timeline Animation");
 
     AddDropDowns(TimelineVariableCategory);
     AddResetAndUpdateButton(TimelineVariableCategory);
     AddTimelineDurationTextField(TimelineVariableCategory);
-
-    IDetailCategoryBuilder& TimelineWidgetCategory = DetailBuilder.EditCategory("Animation Timeline");
 
     AddTimelineWidget(TimelineWidgetCategory);
 
@@ -93,7 +92,7 @@ void UTimelinePluginWidget::AddDropDowns(IDetailCategoryBuilder& Category)
         VariableOptions.Add(MakeShared<FString>(Variable));
     }
 
-    // Ajouter les dropdowns dans la catégorie
+    // Ajouter les dropdowns dans la catï¿½gorie
     Category.AddCustomRow(FText::FromString("Type and Variable"))
         .NameContent()
         [
@@ -164,7 +163,7 @@ void UTimelinePluginWidget::OnTypeSelected(TSharedPtr<FString> NewSelection, ESe
     {
         UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : Type selected: %s"), **NewSelection);
 
-        // Logique de mise à jour pour les types disponibles
+        // Logique de mise ï¿½ jour pour les types disponibles
         TimelineComponent->OnTypeSelected(NewSelection);
 
         // Repeupler les options
@@ -185,7 +184,7 @@ void UTimelinePluginWidget::OnVariableSelected(TSharedPtr<FString> NewSelection,
     {
         UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : Variable selected: %s"), **NewSelection);
 
-        // Ajout de la variable sélectionnée à la liste trackée
+        // Ajout de la variable sï¿½lectionnï¿½e ï¿½ la liste trackï¿½e
         TimelineComponent->OnVariableSelected(NewSelection);
 
         SelectedVariable = NewSelection;
@@ -276,7 +275,7 @@ void UTimelinePluginWidget::AddTimelineDurationTextField(IDetailCategoryBuilder&
 {
     FSlateFontInfo SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
 
-    // Créer le widget et l'assigner à la variable
+    // Crï¿½er le widget et l'assigner ï¿½ la variable
     TimelineDurationTextBox = SNew(SEditableTextBox)
         .Text(this, &UTimelinePluginWidget::GetTimelineDuration)
         .Font(SmallFont)
@@ -284,7 +283,7 @@ void UTimelinePluginWidget::AddTimelineDurationTextField(IDetailCategoryBuilder&
         .SelectAllTextWhenFocused(true)
         .MinDesiredWidth(200.0f);
 
-    // Ajouter le widget à la catégorie
+    // Ajouter le widget ï¿½ la catï¿½gorie
     Category.AddCustomRow(FText::FromString("Timeline Duration"))
         .NameContent()
         [

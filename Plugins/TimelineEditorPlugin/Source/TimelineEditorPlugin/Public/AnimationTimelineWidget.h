@@ -17,12 +17,14 @@ public:
     void Construct(const FArguments& InArgs);
     void InvalidateWidget(TSharedPtr<SWidget> Widget);
     FOptionalSize GetTrackFieldWidth() const;
+    FOptionalSize GetTracksFieldHeight() const;
     FVector2D GetBrushImageSize() const;
     const FSlateBrush* GetTimelineUnitTopBrush() const;
     const FSlateBrush* GetTimelineUnitBottomBrush() const;
     const FSlateBrush* GetTimelineTrackTopBrush() const;
     const FSlateBrush* GetTimelineTrackBrush() const;
     const FSlateBrush* GetTimelineTrackBottomBrush() const;
+    const FSlateBrush* GetTimelineCursorBrush() const;
     void SetBrushImageSize(float WidthValue, float HeightValue);
 
     
@@ -42,6 +44,7 @@ public:
 
     FReply OnTimelineClicked(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent);
     float GetTimeFromClick(const FVector2D& ClickPosition) const;
+    TOptional<FSlateRenderTransform> GetCursorTransform() const;
     FText GetDurationText() const;
 
     FReply OnAddKeyFrame(/*FName VariableName, float Time*/);
@@ -66,6 +69,7 @@ public:
     TAttribute<FVector2D> BrushImageSizeAttribute;
     float TrackFieldWidth;
     TAttribute<FOptionalSize> TrackFieldWidthAttribute;
+    TAttribute<FOptionalSize> TrackFieldHeightAttribute;
 
     FSlateFontInfo SmallFont;
     FSlateBrush TimelineUnitTopBrush;
@@ -73,6 +77,7 @@ public:
     FSlateBrush TimelineTrackTopBrush;
     FSlateBrush TimelineTrackBrush;
     FSlateBrush TimelineTrackBottomBrush;
+    FSlateBrush TimelineCursorBrush;
     UMaterialInterface* TimelineUnitTopMaterial;
     UMaterialInterface* TimelineUnitBottomMaterial;
     UMaterialInterface* TimelineTrackTopMaterial;
@@ -88,4 +93,5 @@ public:
     TAttribute<const FSlateBrush*> TimelineTrackTopBrushAttribute;
     TAttribute<const FSlateBrush*> TimelineTrackBrushAttribute;
     TAttribute<const FSlateBrush*> TimelineTrackBottomBrushAttribute;
+    TAttribute<const FSlateBrush*> TimelineCursorBrushAttribute;
 };

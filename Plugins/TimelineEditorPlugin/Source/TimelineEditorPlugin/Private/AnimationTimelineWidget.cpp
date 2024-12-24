@@ -5,6 +5,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/Texture.h"
+#include "Widgets/Layout/SConstraintCanvas.h"
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -18,6 +19,7 @@ void SAnimationTimelineWidget::Construct(const FArguments& InArgs)
 
     BrushImageSizeAttribute = TAttribute<FVector2D>::Create(TAttribute<FVector2D>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetBrushImageSize));
     TrackFieldWidthAttribute = TAttribute<FOptionalSize>::Create(TAttribute<FOptionalSize>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTrackFieldWidth));
+    TrackFieldHeightAttribute = TAttribute<FOptionalSize>::Create(TAttribute<FOptionalSize>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTracksFieldHeight));
 
     TimelineUnitTopMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/TimelineEditorPlugin/Textures/M_TimelineUnitTop.M_TimelineUnitTop"));
     TimelineUnitBottomMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/TimelineEditorPlugin/Textures/M_TimelineUnitBottom.M_TimelineUnitBottom"));
@@ -45,28 +47,27 @@ void SAnimationTimelineWidget::Construct(const FArguments& InArgs)
     TimelineTrackTopBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineTrackTopBrush));
     TimelineTrackBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineTrackBrush));
     TimelineTrackBottomBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineTrackBottomBrush));
+    TimelineCursorBrushAttribute = TAttribute<const FSlateBrush*>::Create(TAttribute<const FSlateBrush*>::FGetter::CreateSP(this, &SAnimationTimelineWidget::GetTimelineCursorBrush));
 
     SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
 
-    //TimelineUnitTopBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineUnitTop")));
     TimelineUnitTopBrush.SetResourceObject(TimelineUnitTopMaterialDynamic);
     TimelineUnitTopBrush.Tiling = ESlateBrushTileType::Horizontal;
 
-    //TimelineUnitBottomBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineUnitBottom")));
     TimelineUnitBottomBrush.SetResourceObject(TimelineUnitBottomMaterialDynamic);
     TimelineUnitBottomBrush.Tiling = ESlateBrushTileType::Horizontal;
 
-    //TimelineTrackTopBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineTrackTop")));
     TimelineTrackTopBrush.SetResourceObject(TimelineTrackTopMaterialDynamic);
     TimelineTrackTopBrush.Tiling = ESlateBrushTileType::Horizontal;
 
-    //TimelineTrackBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineTrack")));
     TimelineTrackBrush.SetResourceObject(TimelineTrackMaterialDynamic);
     TimelineTrackBrush.Tiling = ESlateBrushTileType::Horizontal;
 
-    //TimelineTrackBottomBrush.SetResourceObject(LoadObject<UTexture2D>(nullptr, TEXT("/TimelineEditorPlugin/Textures/T_TimelineTrackBottom")));
     TimelineTrackBottomBrush.SetResourceObject(TimelineTrackBottomMaterialDynamic);
     TimelineTrackBottomBrush.Tiling = ESlateBrushTileType::Horizontal;
+
+    TimelineCursorBrush.SetResourceObject(LoadObject<UPaperSprite>(nullptr, TEXT("/TimelineEditorPlugin/Textures/SPR_TimelineCursor")));
+
 
     SetBrushImageSize(TimeScale, 30.0f);
 }
@@ -98,11 +99,11 @@ void SAnimationTimelineWidget::SetBrushImageSize(float WidthValue, float HeightV
     TimelineTrackBrush.ImageSize = FVector2D(WidthValue, HeightValue);
     TimelineTrackBottomBrush.ImageSize = FVector2D(WidthValue, HeightValue);
 
-    TimelineUnitTopMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
-    TimelineUnitBottomMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
-    TimelineTrackTopMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
-    TimelineTrackMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
-    TimelineTrackBottomMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 200.0f);
+    TimelineUnitTopMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 100.0f);
+    TimelineUnitBottomMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 100.0f);
+    TimelineTrackTopMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 100.0f);
+    TimelineTrackMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 100.0f);
+    TimelineTrackBottomMaterialDynamic->SetScalarParameterValue("HorizontalTiling", TimeScale / 100.0f);
 }
 
 const FSlateBrush* SAnimationTimelineWidget::GetTimelineUnitTopBrush() const
@@ -125,9 +126,23 @@ const FSlateBrush* SAnimationTimelineWidget::GetTimelineTrackBrush() const
     return &TimelineTrackBrush;
 }
 
-const FSlateBrush* SAnimationTimelineWidget::GetTimelineTrackBottomBrush() const
+const FSlateBrush* SAnimationTimelineWidget::GetTimelineTrackBottomBrush() const 
 {
     return &TimelineTrackBottomBrush;
+}
+
+const FSlateBrush* SAnimationTimelineWidget::GetTimelineCursorBrush() const
+{
+    return &TimelineCursorBrush;
+}
+
+FOptionalSize SAnimationTimelineWidget::GetTracksFieldHeight() const
+{
+    if (TracksField.IsValid())
+    {
+        return FOptionalSize(TracksField->GetDesiredSize().Y);
+    }
+    return FOptionalSize(0.0f); // Par défaut, retourne 0 si non valide
 }
 
 void SAnimationTimelineWidget::AddTimeline()
@@ -137,114 +152,148 @@ void SAnimationTimelineWidget::AddTimeline()
         .Font(SmallFont)
         .OnTextCommitted(this, &SAnimationTimelineWidget::OnCurrentTimeCommitted)
         .SelectAllTextWhenFocused(true);
-    //.MinDesiredWidth(100.0f);
 
     TimeScaleTextBox = SNew(SEditableTextBox)
         .Text(this, &SAnimationTimelineWidget::GetTimeScaleText)
         .Font(SmallFont)
         .OnTextCommitted(this, &SAnimationTimelineWidget::OnTimeScaleCommitted)
         .SelectAllTextWhenFocused(true);
-    //.MinDesiredWidth(100.0f);
 
     ChildSlot
+    [
+        SNew(SVerticalBox)
+
+        // Contrôle de TimeScale
+        + SVerticalBox::Slot()
+        .AutoHeight()
         [
-            SNew(SVerticalBox)
-                // Slot pour TimeScaleTextBox et TimeScaleSlider
+            SNew(SHorizontalBox)
+            + SHorizontalBox::Slot()
+            .AutoWidth()
+            [
+                SNew(SBox)
+                .WidthOverride(50.0f)
+                .HeightOverride(30.0f)
+                [
+                    TimeScaleTextBox.ToSharedRef()
+                ]
+            ]
+            + SHorizontalBox::Slot()
+            .AutoWidth()
+            [
+                SNew(SBox)
+                .MinDesiredWidth(200.0f)
+                .HeightOverride(30.0f)
+                [
+                    SAssignNew(TimeScaleSlider, SSlider)
+                    .Value(this, &SAnimationTimelineWidget::GetTimeScaleSliderValue)
+                    .OnValueChanged(this, &SAnimationTimelineWidget::OnTimeScaleSliderValueChanged)
+                    .SliderBarColor(FLinearColor::White)
+                    .Style(&FCoreStyle::Get().GetWidgetStyle<FSliderStyle>("Slider"))
+                ]
+            ]
+        ]
+
+        // Frise et curseur
+        + SVerticalBox::Slot()
+        .AutoHeight()
+        [
+            // Variables & Tracks Field
+            SNew(SHorizontalBox)
+            + SHorizontalBox::Slot()
+            .AutoWidth()
+            [
+                // Variables Field
+                SAssignNew(VariablesField, SVerticalBox)
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 [
-                    SNew(SHorizontalBox)
-                        // Slot pour TimeScaleTextBox
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        [
-                            SNew(SBox)
-                                .WidthOverride(50.0f) // Largeur fixe pour le texte
-                                .HeightOverride(30.0f) // Hauteur fixe pour le texte
-                                [
-                                    TimeScaleTextBox.ToSharedRef()
-                                ]
-                        ]
-
-                        // Slot pour TimeScaleSlider 
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        [
-                            SNew(SBox)
-                                .MinDesiredWidth(200.0f) // Largeur fixe pour le texte
-                                .HeightOverride(30.0f) // Hauteur fixe pour le texte
-                                [
-                                    SAssignNew(TimeScaleSlider, SSlider)
-                                        .Value(this, &SAnimationTimelineWidget::GetTimeScaleSliderValue)
-                                        .OnValueChanged(this, &SAnimationTimelineWidget::OnTimeScaleSliderValueChanged)
-                                        .SliderBarColor(FLinearColor::White)
-                                        .Style(&FCoreStyle::Get().GetWidgetStyle<FSliderStyle>("Slider"))
-                                ]
-                        ]
+                    // Current Time
+                    SNew(SBox)
+                    .WidthOverride(50.0f)
+                    .HeightOverride(30.0f)
+                    [
+                        CurrentTimeTextBox.ToSharedRef()
+                    ]
                 ]
+            ]
 
-                // Slot pour la frise totale
-                + SVerticalBox::Slot()
-                .AutoHeight()
+            + SHorizontalBox::Slot()
+            .FillWidth(1.0f)
+            [
+                // TracksField
+                SAssignNew(TracksScrollBox, SScrollBox)
+                .Orientation(Orient_Horizontal)
+                + SScrollBox::Slot()
                 [
-                    SNew(SHorizontalBox)
-                        // Slot pour CurrentTimeTextBox encapsul� dans une SVerticalBox
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        [
-                            SAssignNew(VariablesField, SVerticalBox) // Assigne la SVerticalBox � VariablesField
-                                + SVerticalBox::Slot()
-                                .AutoHeight()
-                                [
-                                    SNew(SBox)
-                                        .WidthOverride(50.0f) // Largeur fixe pour le texte
-                                        .HeightOverride(30.0f) // Hauteur fixe pour le texte
-                                        [
-                                            CurrentTimeTextBox.ToSharedRef()
-                                        ]
-                                ]
-                        ]
+                    SNew(SOverlay)
 
-                        // Slot pour la frise scrollable encapsul� dans une SVerticalBox
-                        + SHorizontalBox::Slot()
-                        .FillWidth(1.0f)
+                    // TracksField (les frises)
+                    + SOverlay::Slot()
+                    [
+                        SAssignNew(TracksField, SVerticalBox)
+                        + SVerticalBox::Slot()
+                        .AutoHeight()
                         [
-                            SAssignNew(TracksScrollBox, SScrollBox)
-                                .Orientation(Orient_Horizontal) // Scroll horizontal uniquement
-                                + SScrollBox::Slot()
-                                [
-                                    SAssignNew(TracksField, SVerticalBox) // Assigne la SVerticalBox � KeyFramesField
-                                        + SVerticalBox::Slot()
-                                        .AutoHeight()
-                                        [
-                                            SNew(SBox)
-                                                .MinDesiredWidth(500.0f) // Largeur minimale de la frise
-                                                .WidthOverride(TrackFieldWidthAttribute)
-                                                .HeightOverride(30.0f)   // Hauteur fixe de la frise
-                                                [
-                                                    SAssignNew(TimelineUnitTopImage, SImage)
-                                                        .Image(TimelineUnitTopBrushAttribute)
-                                                        .OnMouseButtonDown(this, &SAnimationTimelineWidget::OnTimelineClicked)
-                                                ]
-                                        ]
-                                        + SVerticalBox::Slot()
-                                        .AutoHeight()
-                                        [
-                                            SNew(SBox)
-                                                .MinDesiredWidth(500.0f) // Largeur minimale de la frise
-                                                .WidthOverride(TrackFieldWidthAttribute)
-                                                .HeightOverride(30.0f)   // Hauteur fixe de la frise
-                                                [
-                                                    SAssignNew(TimelineUnitBottomImage, SImage)
-                                                        .Image(TimelineUnitBottomBrushAttribute)
-                                                        .OnMouseButtonDown(this, &SAnimationTimelineWidget::OnTimelineClicked)
-                                                ]
-                                        ]
-
-                                ]
+                            SNew(SBox)
+                            .MinDesiredWidth(500.0f)
+                            .WidthOverride(TrackFieldWidthAttribute)
+                            .HeightOverride(30.0f)
+                            [
+                                SNew(SImage)
+                                .Image(TimelineUnitTopBrushAttribute)
+                                .OnMouseButtonDown(this, &SAnimationTimelineWidget::OnTimelineClicked)
+                            ]
                         ]
+                        + SVerticalBox::Slot()
+                        .AutoHeight()
+                        [
+                            SNew(SBox)
+                            .MinDesiredWidth(500.0f)
+                            .WidthOverride(TrackFieldWidthAttribute)
+                            .HeightOverride(30.0f)
+                            [
+                                SNew(SImage)
+                                .Image(TimelineUnitBottomBrushAttribute)
+                                .OnMouseButtonDown(this, &SAnimationTimelineWidget::OnTimelineClicked)
+                            ]
+                        ]
+                    ]
+
+                    + SOverlay::Slot()
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Top)
+                    [
+                        SNew(SBox)
+                        .WidthOverride(TrackFieldWidthAttribute) // Largeur de l'espace de clipping
+                        .HeightOverride(TrackFieldHeightAttribute) // Hauteur de l'espace de clipping
+                        .Clipping(EWidgetClipping::ClipToBounds) // Clipper le contenu excédentaire
+                        [
+                            // Curseur
+                            SNew(SConstraintCanvas)
+                            + SConstraintCanvas::Slot()
+                            .AutoSize(true) // Le curseur garde sa taille d'origine
+                            .Anchors(FAnchors(0.0f, 0.0f)) // Ancrage en haut à gauche
+                            .Offset(FMargin(0.0f, 0.0f, 15.0f, 2000.0f)) // Taille fixe (15x2000)
+                            .Alignment(FVector2D(0.5f, 0.0f)) // Alignement en haut
+                            [
+                                SNew(SBox)
+                                .WidthOverride(15.0f)
+                                .HeightOverride(2000.0f)
+                                .RenderTransform(this, &SAnimationTimelineWidget::GetCursorTransform)
+                                .RenderTransformPivot(FVector2D(0.0f, 0.5f)) // Point de pivot
+                                [
+                                    SNew(SImage)
+                                    .Image(TimelineCursorBrushAttribute)
+                                    .Visibility(EVisibility::HitTestInvisible)
+                                ]
+                            ]
+                        ]
+                    ]
                 ]
-        ];
+            ]
+        ]
+    ];
 }
 
 void SAnimationTimelineWidget::SetTimelineDuration()
@@ -370,7 +419,22 @@ FReply SAnimationTimelineWidget::OnTimelineClicked(const FGeometry& MyGeometry, 
 float SAnimationTimelineWidget::GetTimeFromClick(const FVector2D& ClickPosition) const
 {
     float ClickX = ClickPosition.X;
-    return FMath::Clamp((ClickX / TrackFieldWidth) * TimelineDuration, 0.0f, TimelineDuration);
+    float Time = FMath::Clamp((ClickX / TrackFieldWidth) * TimelineDuration, 0.0f, TimelineDuration);
+    return FMath::RoundToFloat(Time * 100.0f) / 100.0f;
+}
+
+TOptional<FSlateRenderTransform> SAnimationTimelineWidget::GetCursorTransform() const
+{
+    if (TimelineDuration <= 0.0f || TrackFieldWidth <= 0.0f)
+    {
+        return TOptional<FSlateRenderTransform>(); // Aucun transform s'il n'y a pas de données valides
+    }
+
+    // Calcul de la position du curseur
+    float CursorPositionX = (CurrentTime / TimelineDuration) * TrackFieldWidth;
+
+    // Retourner la transformation
+    return FSlateRenderTransform(FVector2D(CursorPositionX, 0.0f));
 }
 
 /*FText SAnimationTimelineWidget::GetCurrentTimeText() const

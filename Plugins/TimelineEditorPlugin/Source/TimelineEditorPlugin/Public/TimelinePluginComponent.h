@@ -28,13 +28,15 @@ public:
 	void GetVariablesFromParentBlueprint();
 	void OnTypeSelected(TSharedPtr<FString> NewSelection);
 	void OnVariableSelected(TSharedPtr<FString> NewSelection);
+	void RemoveTrack(int32 TrackID);
+	int32 GenerateUniqueRandomID();
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:
-	// UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Timeline") Pour une variable cachée dans la fenêtre details
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Timeline") Pour une variable cachï¿½e dans la fenï¿½tre details
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")
 	bool IsInitialized;
 
@@ -53,11 +55,6 @@ public:
 	// AnimationTimeline Structure
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	FAnimationTimeline AnimationTimeline;
-
-	// AnimationTimelineDuration
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
-	float AnimationTimelineDuration;
-
 
 
 	// Available TrackedTypes
@@ -97,6 +94,9 @@ public:
 	// Variables already Tracked
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
 	TMap<FString, FString> TrackedVariables;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
+	TArray<int32> TrackedIDs;
 
 	// TrackedVariables Of Available TrackedType
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")

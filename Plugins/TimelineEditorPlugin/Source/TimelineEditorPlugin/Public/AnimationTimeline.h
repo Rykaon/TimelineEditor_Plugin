@@ -12,6 +12,5 @@ struct FAnimationTimeline
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     float Duration;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FAnimationTrack> Tracks;
 };

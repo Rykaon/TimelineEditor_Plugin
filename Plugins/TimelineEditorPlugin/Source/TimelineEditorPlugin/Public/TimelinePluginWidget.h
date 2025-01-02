@@ -12,10 +12,10 @@
 class TIMELINEPLUGIN_API UTimelinePluginWidget : public IDetailCustomization
 {
 public:
-    // Créé une instance de cette classe pour la personnalisation
+    // Crï¿½ï¿½ une instance de cette classe pour la personnalisation
     static TSharedRef<IDetailCustomization> MakeInstance();
 
-    // Implémentation de la personnalisation
+    // Implï¿½mentation de la personnalisation
     virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
     void InitializeComponent();
 
@@ -44,10 +44,10 @@ public:
     TSharedPtr<SAnimationTimelineWidget> AnimationTimelineWidget;
 
     UPROPERTY(meta = (BindWidget))
-    class UComboBoxString* TypeDropdown;
+    TSharedPtr<SComboBox<TSharedPtr<FString>>> TypeDropdown;
 
     UPROPERTY(meta = (BindWidget))
-    class UComboBoxString* VariableDropdown;
+    TSharedPtr<SComboBox<TSharedPtr<FString>>> VariableDropdown;
 
     UPROPERTY(meta = (BindWidget))
     TSharedPtr<SEditableTextBox> TimelineDurationTextBox;

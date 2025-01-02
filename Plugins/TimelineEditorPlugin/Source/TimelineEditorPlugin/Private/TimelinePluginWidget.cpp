@@ -40,6 +40,8 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
             }
         }
     }
+    
+    InitializeComponent();
 
     IDetailCategoryBuilder& TimelineVariableCategory = DetailBuilder.EditCategory("Timeline Variables");
     IDetailCategoryBuilder& TimelineWidgetCategory = DetailBuilder.EditCategory("Timeline Animation");
@@ -49,8 +51,6 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
     AddTimelineDurationTextField(TimelineVariableCategory);
 
     AddTimelineWidget(TimelineWidgetCategory);
-
-    InitializeComponent();
 }
 
 void UTimelinePluginWidget::InitializeComponent() 
@@ -58,10 +58,7 @@ void UTimelinePluginWidget::InitializeComponent()
     if (!TimelineComponent->IsInitialized)
     {
         TimelineComponent->InitializeComponent();
-    }
-    
-    TimelineComponent->AnimationTimeline.Duration = 5.0f;
-    TimelineComponent->AnimationTimelineDuration = 5.0f;
+    }    
 }
 
 
@@ -73,26 +70,63 @@ void UTimelinePluginWidget::AddDropDowns(IDetailCategoryBuilder& Category)
 {
     FSlateFontInfo SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
 
-    // Peupler les options pour le type et s'assurer que SelectedType corresponde au premier index
+    // Peupler les options pour le type
     TypeOptions.Empty();
     for (const FString& Type : TimelineComponent->AvailableTypes)
     {
         TypeOptions.Add(MakeShared<FString>(Type));
     }
 
-    if (TimelineComponent->AvailableTypes.Num() > 0)
+    if (TypeOptions.Num() > 0)
     {
-        SelectedType = MakeShared<FString>(TimelineComponent->AvailableTypes[0]);
+        SelectedType = TypeOptions[0];
     }
 
-    // Peupler les options pour les variables trackables
+    // Peupler les options pour les variables
     VariableOptions.Empty();
     for (const FString& Variable : TimelineComponent->AvailableVariables)
     {
         VariableOptions.Add(MakeShared<FString>(Variable));
     }
 
-    // Ajouter les dropdowns dans la cat�gorie
+    TypeDropdown = SNew(SComboBox<TSharedPtr<FString>>)
+        .OptionsSource(&TypeOptions)
+        .OnSelectionChanged(this, &UTimelinePluginWidget::OnTypeSelected)
+        .OnGenerateWidget_Lambda([SmallFont](TSharedPtr<FString> Item)
+        {
+            return SNew(STextBlock)
+                .Text(FText::FromString(*Item))
+                .Font(SmallFont);
+        })
+        .Content()
+        [
+            SNew(STextBlock)
+                .Text_Lambda([this]()
+                {
+                    return SelectedType.IsValid() ? FText::FromString(*SelectedType) : FText::FromString("Choose Type");
+                })
+                .Font(SmallFont)
+        ];
+
+    VariableDropdown = SNew(SComboBox<TSharedPtr<FString>>)
+        .OptionsSource(&VariableOptions)
+        .OnSelectionChanged(this, &UTimelinePluginWidget::OnVariableSelected)
+        .OnGenerateWidget_Lambda([SmallFont](TSharedPtr<FString> Item)
+        {
+            return SNew(STextBlock)
+                .Text(FText::FromString(*Item))
+                .Font(SmallFont);
+        })
+        .Content()
+        [
+            SNew(STextBlock)
+                .Text_Lambda([this]()
+                {
+                    return SelectedVariable.IsValid() ? FText::FromString(*SelectedVariable) : FText::FromString("Choose Variable");
+                })
+                .Font(SmallFont)
+        ];
+
     Category.AddCustomRow(FText::FromString("Type and Variable"))
         .NameContent()
         [
@@ -106,24 +140,7 @@ void UTimelinePluginWidget::AddDropDowns(IDetailCategoryBuilder& Category)
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 [
-                    SNew(SComboBox<TSharedPtr<FString>>)
-                        .OptionsSource(&TypeOptions)
-                        .OnSelectionChanged(this, &UTimelinePluginWidget::OnTypeSelected)
-                        .OnGenerateWidget_Lambda([SmallFont](TSharedPtr<FString> Item)
-                            {
-                                return SNew(STextBlock)
-                                    .Text(FText::FromString(*Item))
-                                    .Font(SmallFont);
-                            })
-                        .Content()
-                        [
-                            SNew(STextBlock)
-                                .Text_Lambda([this]()
-                                    {
-                                        return SelectedType.IsValid() ? FText::FromString(*SelectedType) : FText::FromString("Choose Type");
-                                    })
-                                .Font(SmallFont)
-                        ]
+                    TypeDropdown.ToSharedRef()
                 ]
 
                 // Espacement entre les deux combo boxes
@@ -135,24 +152,7 @@ void UTimelinePluginWidget::AddDropDowns(IDetailCategoryBuilder& Category)
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 [
-                    SNew(SComboBox<TSharedPtr<FString>>)
-                        .OptionsSource(&VariableOptions)
-                        .OnSelectionChanged(this, &UTimelinePluginWidget::OnVariableSelected)
-                        .OnGenerateWidget_Lambda([SmallFont](TSharedPtr<FString> Item)
-                            {
-                                return SNew(STextBlock)
-                                    .Text(FText::FromString(*Item))
-                                    .Font(SmallFont);
-                            })
-                        .Content()
-                        [
-                            SNew(STextBlock)
-                                .Text_Lambda([this]()
-                                    {
-                                        return SelectedVariable.IsValid() ? FText::FromString(*SelectedVariable) : FText::FromString("Choose Variable");
-                                    })
-                                .Font(SmallFont)
-                        ]
+                    VariableDropdown.ToSharedRef()
                 ]
         ];
 }
@@ -174,6 +174,10 @@ void UTimelinePluginWidget::OnTypeSelected(TSharedPtr<FString> NewSelection, ESe
         }
 
         SelectedType = NewSelection;
+        if (VariableDropdown.IsValid())
+        {
+            VariableDropdown->RefreshOptions();
+        }
         SelectedVariable = nullptr;
     }
 }
@@ -256,6 +260,9 @@ FReply UTimelinePluginWidget::ResetTrackedVariables()
     TimelineComponent->TrackedVectors.Empty();
     TimelineComponent->TrackedRotators.Empty();
 
+    AnimationTimelineWidget->ResetTracks();
+    TimelineComponent->AnimationTimeline.Tracks.Empty();
+
     return FReply::Handled();
 }
 
@@ -325,8 +332,8 @@ void UTimelinePluginWidget::OnTimelineDurationCommitted(const FText& NewText, ET
 
         if (!iss.fail() && iss.eof())
         {
-            TimelineComponent->AnimationTimeline.Duration = value;
-            TimelineComponent->AnimationTimelineDuration = value;
+            TimelineComponent->AnimationTimeline.Duration = FCString::Atof(*TypingFieldContent);
+            UE_LOG(LogTemp, Log, TEXT("Value : %f"), value);        
         }
         else
         {
@@ -344,9 +351,10 @@ void UTimelinePluginWidget::OnTimelineDurationCommitted(const FText& NewText, ET
 // Create Timeline Widget
 void UTimelinePluginWidget::AddTimelineWidget(IDetailCategoryBuilder& Category)
 {
-    AnimationTimelineWidget = SNew(SAnimationTimelineWidget);
+    AnimationTimelineWidget = SNew(SAnimationTimelineWidget).AnimationTimeline(&TimelineComponent->AnimationTimeline);
     AnimationTimelineWidget->TimelinePluginWidget = this;
     AnimationTimelineWidget->AddTimeline();
+    AnimationTimelineWidget->InitializeTimelineTracks();
 
     Category.AddCustomRow(FText::FromString("Animation Timeline"))
         .WholeRowContent()

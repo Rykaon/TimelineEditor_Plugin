@@ -3,19 +3,44 @@
 #include "CoreMinimal.h"
 #include "AnimationKeyFrame.generated.h"
 
+UENUM(BlueprintType)
+enum class EInterpolationType : uint8
+{
+    Linear UMETA(DisplayName = "Linear"),
+    QuadraticIn UMETA(DisplayName = "Quadratic In"),
+    QuadraticOut UMETA(DisplayName = "Quadratic Out"),
+    QuadraticInOut UMETA(DisplayName = "Quadratic In-Out"),
+    CubicIn UMETA(DisplayName = "Cubic In"),
+    CubicOut UMETA(DisplayName = "Cubic Out"),
+    CubicInOut UMETA(DisplayName = "Cubic In-Out"),
+    ExponentialIn UMETA(DisplayName = "Exponential In"),
+    ExponentialOut UMETA(DisplayName = "Exponential Out"),
+    ExponentialInOut UMETA(DisplayName = "Exponential In-Out"),
+    SineIn UMETA(DisplayName = "Sine In"),
+    SineOut UMETA(DisplayName = "Sine Out"),
+    SineInOut UMETA(DisplayName = "Sine In-Out")
+};
+
 USTRUCT(BlueprintType)
 struct  FAnimationKeyFrame
 {
     GENERATED_BODY()
+    
+    int32 ParentTrackID;
+
+    int32 KeyFrameID;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float Time;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool BoolValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 IntValue;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    bool BoolValue;
+    double DoubleValue;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float FloatValueX;
@@ -27,5 +52,5 @@ struct  FAnimationKeyFrame
     float FloatValueZ;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    FName InterpolationType;
+    EInterpolationType InterpolationType = EInterpolationType::Linear;
 };

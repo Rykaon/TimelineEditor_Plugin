@@ -20,7 +20,7 @@ public class TimelinePlugin : ModuleRules
             "UnrealEd",
             "UMG",
             "RenderCore",
-            "RHI"
+            "RHI",
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });

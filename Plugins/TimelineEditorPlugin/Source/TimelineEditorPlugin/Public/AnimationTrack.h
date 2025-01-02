@@ -13,5 +13,31 @@ struct  FAnimationTrack
     FName VariableName;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TArray<FAnimationKeyFrame> Keyframes;
+    FString VariableType;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 TrackID;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool DefaultBoolValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 DefaultIntValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    double DefaultDoubleValue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float DefaultFloatValueX;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float DefaultFloatValueY;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float DefaultFloatValueZ;
+
+    TArray<TSharedPtr<STextBlock>> NameBoxes;
+    TArray<TSharedPtr<SEditableTextBox>> ValueBoxes;
+
+    TArray<FAnimationKeyFrame> KeyFrames;
 };

@@ -26,9 +26,14 @@ struct  FAnimationKeyFrame
 {
     GENERATED_BODY()
     
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 ParentTrackID;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 KeyFrameID;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool IsOpen = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float Time;

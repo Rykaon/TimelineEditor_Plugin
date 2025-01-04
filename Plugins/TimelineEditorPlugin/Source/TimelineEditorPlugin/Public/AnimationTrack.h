@@ -36,8 +36,6 @@ struct  FAnimationTrack
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float DefaultFloatValueZ;
 
-    TArray<TSharedPtr<STextBlock>> NameBoxes;
-    TArray<TSharedPtr<SEditableTextBox>> ValueBoxes;
-
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FAnimationKeyFrame> KeyFrames;
 };

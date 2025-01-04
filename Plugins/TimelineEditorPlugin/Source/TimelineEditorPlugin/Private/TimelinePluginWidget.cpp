@@ -2,7 +2,7 @@
 #include "TimelinePluginComponent.h"
 #include "DetailLayoutBuilder.h"
 #include "Editor/UnrealEd/Public/Editor.h"
-#include "Engine/Selection.h"                   //Use for GEditor to get a reference to TimelineComponent
+#include "Engine/Selection.h"
 #include "GameFramework/Actor.h"
 #include "DetailCategoryBuilder.h"
 #include "DetailWidgetRow.h"
@@ -48,6 +48,7 @@ void UTimelinePluginWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder
 
     AddDropDowns(TimelineVariableCategory);
     AddResetAndUpdateButton(TimelineVariableCategory);
+    AddUpdateFonctionDropdown(TimelineVariableCategory);
     AddTimelineDurationTextField(TimelineVariableCategory);
 
     AddTimelineWidget(TimelineWidgetCategory);
@@ -60,10 +61,6 @@ void UTimelinePluginWidget::InitializeComponent()
         TimelineComponent->InitializeComponent();
     }    
 }
-
-
-
-
 
 //Create & Manage DropDowns
 void UTimelinePluginWidget::AddDropDowns(IDetailCategoryBuilder& Category)
@@ -195,10 +192,6 @@ void UTimelinePluginWidget::OnVariableSelected(TSharedPtr<FString> NewSelection,
     }
 }
 
-
-
-
-
 // Create & Manage Buttons
 void UTimelinePluginWidget::AddResetAndUpdateButton(IDetailCategoryBuilder& Category)
 {
@@ -213,7 +206,7 @@ void UTimelinePluginWidget::AddResetAndUpdateButton(IDetailCategoryBuilder& Cate
         [
             SNew(SVerticalBox)
 
-                // Dropdown pour le type
+                // Dropdown for VariableType
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 [
@@ -228,12 +221,11 @@ void UTimelinePluginWidget::AddResetAndUpdateButton(IDetailCategoryBuilder& Cate
                         .OnClicked(this, &UTimelinePluginWidget::ResetTrackedVariables)
                 ]
 
-                // Espacement entre les deux combo boxes
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 .Padding(0.0f, 1.0f)
 
-                // Dropdown pour la variable
+                // Dropdown for VariableName
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 [
@@ -259,6 +251,7 @@ FReply UTimelinePluginWidget::ResetTrackedVariables()
     TimelineComponent->TrackedDoubles.Empty();
     TimelineComponent->TrackedVectors.Empty();
     TimelineComponent->TrackedRotators.Empty();
+    TimelineComponent->TrackedIDs.Empty();
 
     AnimationTimelineWidget->ResetTracks();
     TimelineComponent->AnimationTimeline.Tracks.Empty();
@@ -273,16 +266,11 @@ FReply UTimelinePluginWidget::UpdateAvailableVariables()
     return FReply::Handled();
 }
 
-
-
-
-
 // Create Duration Typing Field
 void UTimelinePluginWidget::AddTimelineDurationTextField(IDetailCategoryBuilder& Category)
 {
     FSlateFontInfo SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
 
-    // Cr�er le widget et l'assigner � la variable
     TimelineDurationTextBox = SNew(SEditableTextBox)
         .Text(this, &UTimelinePluginWidget::GetTimelineDuration)
         .Font(SmallFont)
@@ -290,7 +278,6 @@ void UTimelinePluginWidget::AddTimelineDurationTextField(IDetailCategoryBuilder&
         .SelectAllTextWhenFocused(true)
         .MinDesiredWidth(200.0f);
 
-    // Ajouter le widget � la cat�gorie
     Category.AddCustomRow(FText::FromString("Timeline Duration"))
         .NameContent()
         [
@@ -344,9 +331,83 @@ void UTimelinePluginWidget::OnTimelineDurationCommitted(const FText& NewText, ET
     }
 }
 
+// Create UpdateFunction Dropdown
+void UTimelinePluginWidget::AddUpdateFonctionDropdown(IDetailCategoryBuilder& Category)
+{
+    FSlateFontInfo SmallFont = FCoreStyle::GetDefaultFontStyle("Regular", 8);
 
+    RefreshDropdownOptions();
 
+    UpdateFunctionDropdown = SNew(SComboBox<TSharedPtr<FName>>)
+    .OptionsSource(&FunctionNames)
+    .OnSelectionChanged_Lambda([this](TSharedPtr<FName> NewSelection, ESelectInfo::Type SelectInfo)
+    {
+        if (NewSelection.IsValid())
+        {
+            SelectedFunction = *NewSelection;
+            TimelineComponent->SelectedFunction = SelectedFunction;
+        }
+    })
+    .OnGenerateWidget_Lambda([SmallFont](TSharedPtr<FName> InItem) -> TSharedRef<SWidget>
+    {
+        return SNew(STextBlock).Text(FText::FromName(*InItem)).Font(SmallFont);
+    })
+    .OnComboBoxOpening_Lambda([this]()
+    {
+        RefreshDropdownOptions();
+    })
+    .Content()
+    [
+        SNew(STextBlock).Text_Lambda([this]() -> FText
+        {
+            return SelectedFunction.IsNone() ? FText::FromString("Select Function") : FText::FromName(SelectedFunction);
+        }).Font(SmallFont)
+    ];
 
+    Category.AddCustomRow(FText::FromString("Update Function"))
+        .NameContent()
+        [
+            SNew(STextBlock)
+                .Text(FText::FromString("Update Function")).Font(SmallFont)
+
+        ]
+        .ValueContent()
+        [
+            UpdateFunctionDropdown.ToSharedRef()
+        ];
+}
+
+void UTimelinePluginWidget::RefreshDropdownOptions()
+{
+    FunctionNames.Empty();
+    FunctionNames.Add(MakeShared<FName>(FName("None")));
+
+    TArray<FName> AvailableFunctions = TimelineComponent->GetAvailableFunctions();
+    if (AvailableFunctions.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No available functions found."));
+        if (FunctionNames.Num() > 0 && !AvailableFunctions.Contains(TimelineComponent->SelectedFunction))
+        {
+            SelectedFunction = *FunctionNames[0];
+        }
+        return;
+    }
+
+    for (const FName& FunctionName : AvailableFunctions)
+    {
+        FunctionNames.Add(MakeShared<FName>(FunctionName));
+    }
+
+    if (UpdateFunctionDropdown.IsValid())
+    {
+        UpdateFunctionDropdown->RefreshOptions();
+    }
+
+    if (FunctionNames.Num() > 0 && !AvailableFunctions.Contains(TimelineComponent->SelectedFunction))
+    {
+        SelectedFunction = *FunctionNames[0];
+    }
+}
 
 // Create Timeline Widget
 void UTimelinePluginWidget::AddTimelineWidget(IDetailCategoryBuilder& Category)

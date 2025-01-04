@@ -164,56 +164,9 @@ void SAnimationTimelineWidget::InitializeTimelineTracks()
     {
         AddTrack(AnimationTimeline->Tracks[i]);
 
-        for (int32 j = 0; i < AnimationTimeline->Tracks[i].KeyFrames.Num(); ++j)
+        for (int32 j = 0; j < AnimationTimeline->Tracks[i].KeyFrames.Num(); ++j)
         {
             AddKeyFrameSlot(AnimationTimeline->Tracks[i].KeyFrames[j].KeyFrameID);
-        }
-    }
-
-    LogMaps();
-}
-
-void SAnimationTimelineWidget::LogMaps() const
-{
-    // Parcourir TracksMap
-    UE_LOG(LogTemp, Warning, TEXT("Logging TracksMap:"));
-    for (const TPair<int32, FAnimationTrack*>& TrackPair : TracksMap)
-    {
-        int32 Key = TrackPair.Key;
-        FAnimationTrack* Value = TrackPair.Value;
-
-        if (Value)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Key: %d, Value: FAnimationTrack (VariableName: %s, VariableType: %s)"),
-                Key,
-                *Value->VariableName.ToString(),
-                *Value->VariableType);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Key: %d, Value: nullptr"), Key);
-        }
-    }
-
-    // Parcourir ValuesTextBoxMap
-    UE_LOG(LogTemp, Warning, TEXT("Logging ValuesTextBoxMap:"));
-    for (const TPair<int32, TArray<TSharedPtr<SEditableTextBox>>>& TextBoxPair : ValuesTextBoxMap)
-    {
-        int32 Key = TextBoxPair.Key;
-        const TArray<TSharedPtr<SEditableTextBox>>& ValueArray = TextBoxPair.Value;
-
-        UE_LOG(LogTemp, Warning, TEXT("Key: %d, Value: TArray (Num: %d)"), Key, ValueArray.Num());
-        for (int32 i = 0; i < ValueArray.Num(); ++i)
-        {
-            TSharedPtr<SEditableTextBox> TextBox = ValueArray[i];
-            if (TextBox.IsValid())
-            {
-                UE_LOG(LogTemp, Warning, TEXT("  Index: %d, TextBox: Valid"), i);
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("  Index: %d, TextBox: Invalid"), i);
-            }
         }
     }
 }
@@ -715,16 +668,19 @@ void SAnimationTimelineWidget::AddKeyFrameSlot(int32 KeyFrameID)
     .HeightOverride(10.0f)
     .RenderTransform_Lambda([this, KeyFrameID]() -> FSlateRenderTransform
     {
+        if (!KeyFramesMap.Contains(KeyFrameID))
+        {
+            return FSlateRenderTransform();
+        }
+
         TOptional<FSlateRenderTransform> RenderTransform = GetKeyFrameTransform(KeyFrameID);
         
         if (RenderTransform.IsSet())
         {
-            UE_LOG(LogTemp, Warning, TEXT("RenderTransform IsSet"));
             return RenderTransform.GetValue();
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("RenderTransform IsNotSet"));
             return FSlateRenderTransform();
         }
     })
@@ -776,8 +732,6 @@ void SAnimationTimelineWidget::ResetTracks()
     {
         RemoveTrack(AnimationTimeline->Tracks[i].TrackID);
     }
-
-    LogMaps();
 }
 
 void SAnimationTimelineWidget::RemoveTrack(int32 TrackID)
@@ -928,6 +882,7 @@ void SAnimationTimelineWidget::RemoveKeyFrame(int32 KeyFrameID)
             // Supprimer le widget de KeyFramesCanvas
             KeyFramesCanvas->RemoveSlot(WidgetToRemove.ToSharedRef());
             KeyFramesMap.Remove(KeyFrame->KeyFrameID);
+            WidgetToRemove.Reset();
         }
         else
         {
@@ -1071,9 +1026,15 @@ FAnimationKeyFrame* SAnimationTimelineWidget::GenerateKeyFrame(int32 TrackID, fl
                 {
                     switch (TextBoxIndex)
                     {
-                        case 0: KeyFrame.FloatValueX = FCString::Atof(*Value.ToString());
-                        case 1: KeyFrame.FloatValueY = FCString::Atof(*Value.ToString());
-                        case 2: KeyFrame.FloatValueZ = FCString::Atof(*Value.ToString());
+                        case 0:
+                            KeyFrame.FloatValueX = FCString::Atof(*Value.ToString());
+                            break;
+                        case 1:
+                            KeyFrame.FloatValueY = FCString::Atof(*Value.ToString());
+                            break;
+                        case 2:
+                            KeyFrame.FloatValueZ = FCString::Atof(*Value.ToString());
+                            break;
                         default:
                             UE_LOG(LogTemp, Warning, TEXT("Invalid Index: %d"), TextBoxIndex);
                             return nullptr;
@@ -1212,7 +1173,52 @@ FAnimationKeyFrame* SAnimationTimelineWidget::GenerateKeyFrame(int32 TrackID, fl
 
 void SAnimationTimelineWidget::OpenKeyFrame(int32 KeyFrameID)
 {
+    if (KeyFrameEditorWindow.IsValid())
+    {
+        TSharedRef<SWidget> WidgetRef = KeyFrameEditorWindow->GetContent();
+        TSharedRef<SKeyFrameEditorWidget> ExistingWidget = StaticCastSharedRef<SKeyFrameEditorWidget>(WidgetRef);
 
+        if (ExistingWidget->KeyFrame)
+        {
+            ExistingWidget->KeyFrame->IsOpen = false;
+        }
+
+        FSlateApplication::Get().RequestDestroyWindow(KeyFrameEditorWindow.ToSharedRef());
+        KeyFrameEditorWindow.Reset();
+    }
+
+    FAnimationKeyFrame* KeyFrame = GetKeyFrameOfID(KeyFrameID);
+    if (!KeyFrame)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No KeyFrame found for ID: %d"), KeyFrameID);
+        return;
+    }
+
+    FAnimationTrack* Track = GetTrackOfID(KeyFrame->ParentTrackID);
+    if (!Track)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No Track found for ID: %d"), KeyFrame->ParentTrackID);
+        return;
+    }
+
+    KeyFrame->IsOpen = true;
+
+    KeyFrameEditorWindow = SNew(SWindow)
+        .Title(FText::FromString("Edit KeyFrame"))
+        .ClientSize(FVector2D(400, 300))
+        .SupportsMaximize(false)
+        .SupportsMinimize(false)
+        .HasCloseButton(false);
+
+    TSharedRef<SKeyFrameEditorWidget> KeyFrameEditorWidget = SNew(SKeyFrameEditorWidget)
+        .ParentWidget(this)
+        .Track(Track)
+        .KeyFrame(KeyFrame);
+
+    KeyFrameEditorWidget->SetParentWindow(KeyFrameEditorWindow);
+    KeyFrameEditorWindow->SetContent(KeyFrameEditorWidget);
+
+    FSlateApplication::Get().AddWindow(KeyFrameEditorWindow.ToSharedRef());
 }
 
 void SAnimationTimelineWidget::SetKeyFrameValueAtTime(int32 KeyFrameID, float Time)
@@ -1443,8 +1449,13 @@ void SAnimationTimelineWidget::OnTimeScaleSliderValueChanged(float NewValue)
 FReply SAnimationTimelineWidget::OnTimelineClicked(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
     FVector2D LocalClickPosition = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
-    CurrentTime = GetTimeFromClick(LocalClickPosition);
-    SetTracksValueAtTime(CurrentTime);
+    float NewTime = GetTimeFromClick(LocalClickPosition);
+
+    if (NewTime >= 0.0f && NewTime <= AnimationTimeline->Duration)
+    {
+        CurrentTime = NewTime;
+        SetTracksValueAtTime(CurrentTime);
+    }
 
     return FReply::Handled();
 }
@@ -1473,7 +1484,6 @@ TOptional<FSlateRenderTransform> SAnimationTimelineWidget::GetKeyFrameTransform(
 
     if (KeyFrame == nullptr)
     {
-        UE_LOG(LogTemp, Warning, TEXT("No KeyFrame of KeyFrameID %d found in AnimationTimeline"), KeyFrameID);
         return TOptional<FSlateRenderTransform>();
     }
 
@@ -1495,8 +1505,6 @@ TOptional<FSlateRenderTransform> SAnimationTimelineWidget::GetKeyFrameTransform(
 
     float KeyFramePositionX = (KeyFrame->Time / AnimationTimeline->Duration) * TrackFieldWidth;
     float KeyFramePositionY = 45 + (TrackIndex * 30);
-    UE_LOG(LogTemp, Warning, TEXT("TrackIndex : %d, PosX : %f, PosY : %f"),
-    TrackIndex, KeyFramePositionX, KeyFramePositionY);
 
     return FSlateRenderTransform(FVector2D(KeyFramePositionX, KeyFramePositionY));
 }
@@ -1522,22 +1530,35 @@ void SAnimationTimelineWidget::SetTracksValueAtTime(float Time)
 
     for (int32 i = 0; i < IDs.Num(); ++i)
     {
-        if (ValuesTextBoxMap.Contains(IDs[i]))
-        {
-            TArray<TSharedPtr<SEditableTextBox>>& TextBoxes = ValuesTextBoxMap[IDs[i]];
+        SetTrackValueAtTime(IDs[i], Time);
+    }
+}
 
-            for (int32 j = 0; j < TextBoxes.Num(); ++j)
+void SAnimationTimelineWidget::SetTrackValueAtTime(int32 TrackID, float Time)
+{
+    if (ValuesTextBoxMap.Contains(TrackID))
+    {
+        TArray<TSharedPtr<SEditableTextBox>>& TextBoxes = ValuesTextBoxMap[TrackID];
+
+        for (int32 j = 0; j < TextBoxes.Num(); ++j)
+        {
+            if (TextBoxes[j].IsValid())
             {
-                if (TextBoxes[j].IsValid())
-                {
-                    TextBoxes[j]->SetText(GetTrackValueAtTimeAsText(IDs[i], Time, j)); 
-                }
-                else
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("TextBox %d is invalid"), j);
-                }
-            } 
-        }   
+                TextBoxes[j]->SetText(GetTrackValueAtTimeAsText(TrackID, Time, j)); 
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("TextBox %d is invalid"), j);
+            }
+        }
+
+        for (int32 i = 0; i < AnimationTimeline->Tracks.Num(); ++i)
+        {
+            if (AnimationTimeline->Tracks[i].TrackID == TrackID)
+            {
+                TimelinePluginWidget->TimelineComponent->ApplyTrackValueAtTimeToVariable(i, Time);
+            }
+        } 
     }
 }
 
@@ -1681,9 +1702,15 @@ void SAnimationTimelineWidget::OnTextBoxCommittedForTrack(const FText& NewText, 
 
                                     switch (TextBoxIndex)
                                     {
-                                        case 0: Track->KeyFrames[KeyFrameIndex].FloatValueX = Value;
-                                        case 1: Track->KeyFrames[KeyFrameIndex].FloatValueY = Value;
-                                        case 2: Track->KeyFrames[KeyFrameIndex].FloatValueZ = Value;
+                                        case 0: 
+                                            Track->KeyFrames[KeyFrameIndex].FloatValueX = Value;
+                                            break;
+                                        case 1: 
+                                            Track->KeyFrames[KeyFrameIndex].FloatValueY = Value;
+                                            break;
+                                        case 2: 
+                                            Track->KeyFrames[KeyFrameIndex].FloatValueZ = Value;
+                                            break;
                                     }
                                 }
                                 else
@@ -1706,6 +1733,7 @@ void SAnimationTimelineWidget::OnTextBoxCommittedForTrack(const FText& NewText, 
                 UE_LOG(LogTemp, Log, TEXT("Track Updated: %s, Index: %d, New Value: %s"), *Track->VariableName.ToString(), TextBoxIndex, *NewText.ToString());
 
                 TextBox->SetText(GetTrackValueAtTimeAsText(TrackID, CurrentTime, TextBoxIndex));
+                SetTrackValueAtTime(TrackID, CurrentTime);
             }
         }
     }
@@ -1742,7 +1770,6 @@ FAnimationKeyFrame* SAnimationTimelineWidget::GetKeyFrameOfID(int32 KeyFrameID)
         }
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("No KeyFrame of KeyFrameID %d found in AnimationTimeline"), KeyFrameID);
     return nullptr;
 }
 
@@ -1796,7 +1823,7 @@ bool SAnimationTimelineWidget::IsValidFloat(const FString& InputString)
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : TimeScale not set as valid Float!"));
+        UE_LOG(LogTemp, Log, TEXT("TIMELINE PLUGIN : Value not set as valid Float!"));
         return false;
     }
 }
@@ -1872,6 +1899,10 @@ FText SAnimationTimelineWidget::GetTrackDefaultValueAsText(int32 TrackID, int32 
     {
         return FText::FromString(FString::SanitizeFloat(Track->DefaultFloatValueX));
     }
+    else if (Track->VariableType == "Double")
+    {
+        return FText::FromString(FString::Printf(TEXT("%.15g"), Track->DefaultDoubleValue));
+    }
     else if (Track->VariableType == "Vector" || Track->VariableType == "Rotator")
     {
         if (Index == 0)
@@ -1900,8 +1931,6 @@ FText SAnimationTimelineWidget::GetTrackValueAtTimeAsText(int32 TrackID, float T
         UE_LOG(LogTemp, Warning, TEXT("No Track of Track ID %d found in AnimationTimeline"), TrackID);
         return FText::FromString("null");
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("Fetching value for Track ID %d at Time %f and Index %d"), TrackID, Time, Index);
 
     if (Track->VariableType == "Boolean")
     {
@@ -1951,7 +1980,7 @@ FText SAnimationTimelineWidget::GetTrackValueAtTimeAsText(int32 TrackID, float T
 
         if (!std::isnan(DoubleValue))
         {
-            return FText::FromString(FString::SanitizeFloat(DoubleValue));
+            return FText::FromString(FString::Printf(TEXT("%.15g"), DoubleValue));
         }
         else
         {
@@ -1994,8 +2023,18 @@ std::optional<bool> SAnimationTimelineWidget::GetTrackBoolValueAtTime(int32 Trac
     for (int32 i = 0; i < Track->KeyFrames.Num(); ++i)
     {
         if (Track->KeyFrames[i].Time < Time)
-        {
-            StartKey = &Track->KeyFrames[i];
+        {            
+            if (StartKey)
+            {
+                if (Track->KeyFrames[i].Time > StartKey->Time)
+                {
+                    StartKey = &Track->KeyFrames[i];
+                }
+            }
+            else
+            {
+                StartKey = &Track->KeyFrames[i];
+            }
         }
         else if (Track->KeyFrames[i].Time == Time)
         {
@@ -2003,7 +2042,17 @@ std::optional<bool> SAnimationTimelineWidget::GetTrackBoolValueAtTime(int32 Trac
         }
         else
         {
-            break;
+            if (EndKey)
+            {
+                if (Track->KeyFrames[i].Time < EndKey->Time)
+                {
+                    EndKey = &Track->KeyFrames[i];
+                }
+            }
+            else
+            {
+                EndKey = &Track->KeyFrames[i];
+            }
         }
     }
 
@@ -2033,8 +2082,18 @@ std::optional<int32> SAnimationTimelineWidget::GetTrackIntValueAtTime(int32 Trac
     for (int32 i = 0; i < Track->KeyFrames.Num(); ++i)
     {
         if (Track->KeyFrames[i].Time < Time)
-        {
-            StartKey = &Track->KeyFrames[i];
+        {            
+            if (StartKey)
+            {
+                if (Track->KeyFrames[i].Time > StartKey->Time)
+                {
+                    StartKey = &Track->KeyFrames[i];
+                }
+            }
+            else
+            {
+                StartKey = &Track->KeyFrames[i];
+            }
         }
         else if (Track->KeyFrames[i].Time == Time)
         {
@@ -2042,8 +2101,17 @@ std::optional<int32> SAnimationTimelineWidget::GetTrackIntValueAtTime(int32 Trac
         }
         else
         {
-            EndKey = &Track->KeyFrames[i];
-            break;
+            if (EndKey)
+            {
+                if (Track->KeyFrames[i].Time < EndKey->Time)
+                {
+                    EndKey = &Track->KeyFrames[i];
+                }
+            }
+            else
+            {
+                EndKey = &Track->KeyFrames[i];
+            }
         }
     }
 
@@ -2079,8 +2147,18 @@ float SAnimationTimelineWidget::GetTrackFloatValueAtTime(int32 TrackID, float Ti
     for (int32 i = 0; i < Track->KeyFrames.Num(); ++i)
     {
         if (Track->KeyFrames[i].Time < Time)
-        {
-            StartKey = &Track->KeyFrames[i];
+        {            
+            if (StartKey)
+            {
+                if (Track->KeyFrames[i].Time > StartKey->Time)
+                {
+                    StartKey = &Track->KeyFrames[i];
+                }
+            }
+            else
+            {
+                StartKey = &Track->KeyFrames[i];
+            }
         }
         else if (Track->KeyFrames[i].Time == Time)
         {
@@ -2096,8 +2174,17 @@ float SAnimationTimelineWidget::GetTrackFloatValueAtTime(int32 TrackID, float Ti
         }
         else
         {
-            EndKey = &Track->KeyFrames[i];
-            break;
+            if (EndKey)
+            {
+                if (Track->KeyFrames[i].Time < EndKey->Time)
+                {
+                    EndKey = &Track->KeyFrames[i];
+                }
+            }
+            else
+            {
+                EndKey = &Track->KeyFrames[i];
+            }
         }
     }
 
@@ -2158,8 +2245,18 @@ double SAnimationTimelineWidget::GetTrackDoubleValueAtTime(int32 TrackID, float 
     for (int32 i = 0; i < Track->KeyFrames.Num(); ++i)
     {
         if (Track->KeyFrames[i].Time < Time)
-        {
-            StartKey = &Track->KeyFrames[i];
+        {            
+            if (StartKey)
+            {
+                if (Track->KeyFrames[i].Time > StartKey->Time)
+                {
+                    StartKey = &Track->KeyFrames[i];
+                }
+            }
+            else
+            {
+                StartKey = &Track->KeyFrames[i];
+            }
         }
         else if (Track->KeyFrames[i].Time == Time)
         {
@@ -2167,8 +2264,17 @@ double SAnimationTimelineWidget::GetTrackDoubleValueAtTime(int32 TrackID, float 
         }
         else
         {
-            EndKey = &Track->KeyFrames[i];
-            break;
+            if (EndKey)
+            {
+                if (Track->KeyFrames[i].Time < EndKey->Time)
+                {
+                    EndKey = &Track->KeyFrames[i];
+                }
+            }
+            else
+            {
+                EndKey = &Track->KeyFrames[i];
+            }
         }
     }
 

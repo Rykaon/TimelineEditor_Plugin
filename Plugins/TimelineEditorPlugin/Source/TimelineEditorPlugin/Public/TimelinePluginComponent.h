@@ -18,12 +18,14 @@ public:
 	
 	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
-	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void InitializeComponent();
 
+	bool IsAnimationTimelineWidgetValid();
+	TArray<FName> GetAvailableFunctions();
 	bool IsVariableTracked(const FString& VariableName);
+
 	void PopulateAvailableVariables();
 	void GetVariablesFromParentBlueprint();
 	void OnTypeSelected(TSharedPtr<FString> NewSelection);
@@ -31,8 +33,23 @@ public:
 	void RemoveTrack(int32 TrackID);
 	int32 GenerateUniqueRandomID();
 
+	void ApplyTrackDefaultValueToVariable(int32 TrackIndex);
+	void ApplyTrackValueAtTimeToVariable(int32 TrackIndex, float Time);
+	void CallSelectedFunction();
+
+	FAnimationTrack* GetTrackOfID(int32 TrackID);
+	std::optional<bool> GetTrackBoolValueAtTime(int32 TrackID, float Time);
+    std::optional<int32> GetTrackIntValueAtTime(int32 TrackID, float Time);
+    float GetTrackFloatValueAtTime(int32 TrackID, float Time, int32 Index);
+    double GetTrackDoubleValueAtTime(int32 TrackID, float Time);
+	float GetAlphaAtTime(float Start, float End, float Time);
+    float InterpolateFloat(float StartValue, float EndValue, float Alpha, EInterpolationType InterpolationType);
+    int32 InterpolateInteger(int32 StartValue, int32 EndValue, float Alpha, EInterpolationType InterpolationType);
+    double InterpolateDouble(double StartValue, double EndValue, float Alpha, EInterpolationType InterpolationType);
+    FVector InterpolateVector(FVector StartValue, FVector EndValue, float Alpha, EInterpolationType InterpolationType);
+    FRotator InterpolateRotator(FRotator StartValue, FRotator EndValue, float Alpha, EInterpolationType InterpolationType);
+
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:
@@ -56,6 +73,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
 	FAnimationTimeline AnimationTimeline;
 
+	// AnimationTimeline Structure
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline")
+	bool IsAnimationLooping = true;
+
+	float CurrentTime = 0.0f;
+	FName SelectedFunction = FName("None");
 
 	// Available TrackedTypes
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Timeline")

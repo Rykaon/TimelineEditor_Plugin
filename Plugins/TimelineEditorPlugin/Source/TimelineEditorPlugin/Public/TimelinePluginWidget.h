@@ -12,10 +12,8 @@
 class TIMELINEPLUGIN_API UTimelinePluginWidget : public IDetailCustomization
 {
 public:
-    // Cr�� une instance de cette classe pour la personnalisation
     static TSharedRef<IDetailCustomization> MakeInstance();
 
-    // Impl�mentation de la personnalisation
     virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
     void InitializeComponent();
 
@@ -30,6 +28,9 @@ public:
     void AddTimelineDurationTextField(IDetailCategoryBuilder& Category);
     FText GetTimelineDuration() const;
     void OnTimelineDurationCommitted(const FText& NewText, ETextCommit::Type CommitType);
+
+    void AddUpdateFonctionDropdown(IDetailCategoryBuilder& Category);
+    void RefreshDropdownOptions();
 
     void AddTimelineWidget(IDetailCategoryBuilder& Category);
 
@@ -60,4 +61,12 @@ public:
 
     UPROPERTY(meta = (BindWidget))
     TSharedPtr<FString> SelectedVariable;
+
+    UPROPERTY(meta = (BindWidget))
+    TSharedPtr<SComboBox<TSharedPtr<FName>>> UpdateFunctionDropdown;
+
+    UPROPERTY(meta = (BindWidget))
+    FName SelectedFunction;
+
+    TArray<TSharedPtr<FName>> FunctionNames;
 };

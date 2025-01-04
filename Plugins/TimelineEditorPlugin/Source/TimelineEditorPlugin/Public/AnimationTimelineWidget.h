@@ -7,6 +7,7 @@
 #include "Widgets/Layout/SConstraintCanvas.h"
 #include "AnimationTimeline.h"
 #include "Engine/Texture.h"
+#include "KeyFrameEditorWidget.h"
 #include <optional>
 //#include "TimelinePluginWidget.h"
 //#include "AnimationTimelineWidget.generated.h"
@@ -67,10 +68,10 @@ public:
     std::optional<bool> DoesTrackContainKeyFrameAtTime(int32 TrackID, float Time);
     int32 GetIndexOfKeyFrameAtTimeInTrack(int32 TrackID, float Time);
     void SetTracksValueAtTime(float Time);
+    void SetTrackValueAtTime(int32 TrackID, float Time);
     void SetKeyFrameValueAtTime(int32 KeyFrameID, float Time);
 
     // Utilities
-    void LogMaps() const;
     void OnTextBoxCommittedForTrack(const FText& NewText, ETextCommit::Type CommitType, int32 TrackID, int32 TextBoxIndex);
     bool IsValidBoolean(const FString& InputString);
     bool IsValidInteger(const FString& InputString);
@@ -117,6 +118,7 @@ public:
     TSharedPtr<SVerticalBox> TracksField;
     TSharedPtr<SScrollBox> TracksScrollBox;
     TSharedPtr<SConstraintCanvas> KeyFramesCanvas;
+    TSharedPtr<SWindow> KeyFrameEditorWindow;
 
     // Variables to update TrackedVariables
     FAnimationTimeline* AnimationTimeline;
